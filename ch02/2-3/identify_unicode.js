@@ -1,12 +1,26 @@
-// ユーザーの環境におけるUnicodeの正規化形式の違いを確認するコード
-const normalizeString = (str, form) => str.normalize(form);
+import fs from "fs";
+import path from "path";
 
-const testString = "é"; // U+00E9 (é)はNFDでは分解され、NFCでは合成されます
+// 実際のファイルパスを指定
+const filePath = "デズド.txt";
 
-console.log("NFC形式での正規化:", normalizeString(testString, "NFC"));
-console.log("NFD形式での正規化:", normalizeString(testString, "NFD"));
+// ファイルが存在するか確認
+fs.access(filePath, fs.constants.F_OK, (err) => {
+  if (err) {
+    console.log("ファイルが存在しません:", err);
+    return;
+  }
 
-// 文字列が異なる正規化形式で保存されることを示すために、
-// WindowsとmacOSで異なる挙動を確認することができます。
-// 例えば、macOSのファイルシステムでは、NFCで保存されることが多いですが、
-// WindowsではNFD形式が保存されることもあります。
+  // ファイル名を取得
+  const fileName = path.basename(filePath);
+
+  // 正規化してNFCに変換
+  const fileNameNFC = fileName.normalize("NFC");
+
+  // ファイル名とその正規化結果を比較する
+  console.log("元のファイル名:", fileName);
+  console.log("NFC形式での正規化:", fileNameNFC);
+
+  // 同一かどうかを比較
+  console.log("NFCと同一か?", fileName === fileNameNFC);
+});
