@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 // 実際のファイルパスを指定
-const filePath = "デズド.txt";
+const filePath = "éxample.txt";
 
 // ファイルが存在するか確認
 fs.access(filePath, fs.constants.F_OK, (err) => {
