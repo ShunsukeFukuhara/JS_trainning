@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>jQuery Example</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <button id="myButton">Click me</button>
+    <p class="text">Hello, world!</p>
+
+    <script>
+      // id属性で選択
+      $("#myButton").click(function () {
+        alert("Button clicked!");
+      });
+
+      // class属性で選択
+      $(".text").css("color", "blue");
+    </script>
+  </body>
+</html>

@@ -19,5 +19,10 @@
     "prettier": "^3.0.3",
     "serve": "^14.2.3"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "underscore": "^1.13.7",
+    "unorm": "^1.6.0"
+  }
 }
