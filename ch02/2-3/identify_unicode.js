@@ -1,7 +1,8 @@
 import fs from "fs";
 
 // NFCのファイルパス
-const nfcFilePath = "éxample.txt";
+const nfcE = "\u00E9";
+const nfcFilePath = `${nfcE}xample.txt`;
 
 // NFDのファイルパス
 const nfdE = "e\u0301";
