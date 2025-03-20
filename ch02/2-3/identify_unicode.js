@@ -15,7 +15,11 @@ console.log("長さ", file2Path.length);
 
 // ファイル名の比較
 if (file1Path.length === file2Path.length) {
-  console.log("ファイルの長さは同じです。");
+  console.log(
+    "ファイルの長さは同じです。濁音と静音が同じ文字数なのでNFCとして扱われています"
+  );
 } else {
-  console.log("ファイルの長さは異なります。");
+  console.log(
+    "ファイルの長さは異なります。濁音と静音で長さが違うのでNFDとして扱われています"
+  );
 }
