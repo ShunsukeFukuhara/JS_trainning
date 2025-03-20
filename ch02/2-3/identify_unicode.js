@@ -1,25 +1,35 @@
+import fs from "fs";
 import path from "path";
+import unicodify from "unorm"; // unorm ライブラリを使う
 
-// 2つのファイルの絶対パスを取得
-const file1Path = path.resolve("テスト.txt");
-const file2Path = path.resolve("デズド.txt");
+// テストファイル名を指定
+const fileName = "デズド.txt"; // 例: ファイル名に濁音や半濁音を含む
 
-// ファイル名の文字数を比較
-console.log("テスト.txt");
-console.log(file1Path);
-console.log("長さ", file1Path.length);
+// ファイルのパスを取得
+const filePath = path.resolve(fileName);
 
-console.log("デズド.txt");
-console.log(file2Path);
-console.log("長さ", file2Path.length);
+// NFDとNFCに正規化
+const nfdFileName = unicodify.nfd(fileName);
+const nfcFileName = unicodify.nfc(fileName);
 
-// ファイル名の比較
-if (file1Path.length === file2Path.length) {
-  console.log(
-    "ファイルの長さは同じです。濁音と静音が同じ文字数なのでNFCとして扱われています"
-  );
+// ファイルシステム上の保存形式（正規化前のファイル名）を確認
+console.log("オリジナルファイル名:", fileName);
+console.log("NFD形式に正規化:", nfdFileName);
+console.log("NFC形式に正規化:", nfcFileName);
+
+// ファイルパスの正規化形式を比較
+console.log("NFDとNFCの比較:");
+if (fileName === nfcFileName) {
+  console.log("同じ。");
 } else {
-  console.log(
-    "ファイルの長さは異なります。濁音と静音で長さが違うのでNFDとして扱われています"
-  );
+  console.log("異なる");
 }
+
+// ファイルが存在するか確認（ファイルシステムが保存する形式での確認）
+fs.access(filePath, fs.constants.F_OK, (err) => {
+  if (err) {
+    console.error("ファイルが存在しません:", filePath);
+  } else {
+    console.log("ファイルは存在します:", filePath);
+  }
+});
