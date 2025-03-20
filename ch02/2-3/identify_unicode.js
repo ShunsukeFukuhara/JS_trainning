@@ -1,35 +1,12 @@
-import fs from "fs";
-import path from "path";
-import unicodify from "unorm"; // unorm ライブラリを使う
+// ユーザーの環境におけるUnicodeの正規化形式の違いを確認するコード
+const normalizeString = (str, form) => str.normalize(form);
 
-// テストファイル名を指定
-const fileName = "デズド.txt"; // 例: ファイル名に濁音や半濁音を含む
+const testString = "é"; // U+00E9 (é)はNFDでは分解され、NFCでは合成されます
 
-// ファイルのパスを取得
-const filePath = path.resolve(fileName);
+console.log("NFC形式での正規化:", normalizeString(testString, "NFC"));
+console.log("NFD形式での正規化:", normalizeString(testString, "NFD"));
 
-// NFDとNFCに正規化
-const nfdFileName = unicodify.nfd(fileName);
-const nfcFileName = unicodify.nfc(fileName);
-
-// ファイルシステム上の保存形式（正規化前のファイル名）を確認
-console.log("オリジナルファイル名:", fileName);
-console.log("NFD形式に正規化:", nfdFileName);
-console.log("NFC形式に正規化:", nfcFileName);
-
-// ファイルパスの正規化形式を比較
-console.log("NFDとNFCの比較:");
-if (fileName === nfcFileName) {
-  console.log("同じ。");
-} else {
-  console.log("異なる");
-}
-
-// ファイルが存在するか確認（ファイルシステムが保存する形式での確認）
-fs.access(filePath, fs.constants.F_OK, (err) => {
-  if (err) {
-    console.error("ファイルが存在しません:", filePath);
-  } else {
-    console.log("ファイルは存在します:", filePath);
-  }
-});
+// 文字列が異なる正規化形式で保存されることを示すために、
+// WindowsとmacOSで異なる挙動を確認することができます。
+// 例えば、macOSのファイルシステムでは、NFCで保存されることが多いですが、
+// WindowsではNFD形式が保存されることもあります。
