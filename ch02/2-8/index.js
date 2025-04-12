@@ -136,34 +136,24 @@ const generateText = (body, str) => {
 
   // テンプレートリテラルがある場合の処理
   const getTextWithTemplateLiteral = (nodes) => {
-    let result = "";
+    let generatedInner = "";
 
-    nodes.forEach((decl) => {
-      const init = decl.init;
+    nodes.forEach((node) => {
+      const text = getPart(node);
 
-      if (init.type !== "TemplateLiteral") {
-        result += getPart(decl);
-        return;
-      }
-
-      // テンプレートリテラルの最初（バッククォート）から最初の quasi まで
-      result += str.slice(decl.start, init.quasis[0].start);
-
-      for (let i = 0; i < init.quasis.length; i++) {
-        const quasi = init.quasis[i];
-        result += str.slice(quasi.start, quasi.end); // そのまま文字列部分を追加
-
-        if (i < init.expressions.length) {
-          const expr = init.expressions[i];
-          const innerCode = str.slice(expr.start, expr.end);
-          const cleaned = removeSemicolon(innerCode); // 再帰的にセミコロン除去
-
-          result += "${" + cleaned + "}"; // 再構築
-        }
+      if (node.init.type === "TemplateLiteral") {
+        // テンプレート文字列全体から `${...}` を取り出して処理
+        generatedInner += text.replace(/\$\{([\s\S]*?)\}/g, (_, inner) => {
+          // inner（中のコード）を再帰的にセミコロン除去
+          const cleaned = removeSemicolon(inner);
+          return "${" + cleaned + "}";
+        });
+      } else {
+        generatedInner += text;
       }
     });
 
-    return result;
+    return generatedInner;
   };
   // const getTextWithTemplateLiteral = (nodes) => {
   //   let generatedInner = "";
