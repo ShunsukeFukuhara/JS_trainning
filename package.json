@@ -21,6 +21,7 @@
   },
   "type": "module",
   "dependencies": {
+    "acorn": "^8.14.1",
     "fs": "^0.0.1-security",
     "underscore": "^1.13.7",
     "unorm": "^1.6.0"
