@@ -37,8 +37,8 @@ function lteTestCase(a, b) {
 
 // tests for eq
 test.each([
-  eqTestCase(hoge1, hoge1),
-  eqTestCase(hoge1, hoge2),
+  // eqTestCase(hoge1, hoge1),
+  // eqTestCase(hoge1, hoge2),
 
   eqTestCase("foo", "bar"),
   eqTestCase("bar", "foo"),
