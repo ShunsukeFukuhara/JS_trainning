@@ -1,9 +1,26 @@
-export function eq(a, b) {
-  // TODO: ここを実装しなさい
-  return false;
-}
+// /* eslint-disable */
+// for (let i = 0; i < 10; i++) {
+//   (function () {
+//     let i = 100;
+//   })();
+//   console.log(i);
+// }
+// console.log(i);
 
-export function lte(a, b) {
-  // TODO: ここを実装しなさい
-  return false;
+// /* eslint-disable */
+// for (var i = 0; i < 10; i++) {
+//   (function () {
+//     var i = 100;
+//   })();
+//   console.log(i);
+// }
+// console.log(i);
+
+/* eslint-disable */
+for (i = 0; i < 10; i++) {
+  (function () {
+    i = 100;
+  })();
+  console.log(i);
 }
+console.log(i);
