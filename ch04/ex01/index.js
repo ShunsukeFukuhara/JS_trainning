@@ -1,3 +1,5 @@
+// 実部と虚部をプロパティとして持つ 2 つの複素数オブジェクトを引数として四則演算の結果を返す関数 add、sub、mul、div を実装しなさい。
+
 export const add = (a, b) => {
   return {
     real: a.real + b.real,
@@ -20,10 +22,11 @@ export const mul = (a, b) => {
 };
 
 export const div = (a, b) => {
-  const denominator = b.real ** 2 + b.imag ** 2;
-  const molecule = mul(a, { real: b.real, imag: -b.imag });
+  const conjugateWithB = { real: b.real, imag: -b.imag };
+  const numerator = mul(a, conjugateWithB);
+  const denominator = mul(b, conjugateWithB).real; // 共役を掛けると虚部が消えるはず
   return {
-    real: molecule.real / denominator,
-    imag: molecule.imag / denominator,
+    real: numerator.real / denominator,
+    imag: numerator.imag / denominator,
   };
 };
