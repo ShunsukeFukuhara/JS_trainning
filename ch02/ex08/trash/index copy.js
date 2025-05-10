@@ -1,5 +1,4 @@
 import { parse } from "acorn";
-import { get } from "underscore";
 
 export const removeSemicolon = (str) => {
   let ast;
