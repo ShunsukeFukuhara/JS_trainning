@@ -34,7 +34,8 @@ set42("while (true) console.log('あああああ'); const a");
 set42(
   `(async () => {
     const zip = '1000001';
-    const url = \`https://zipcloud.ibsnet.co.jp/api/search?zipcode=\${zip}\`;
+    const url = \`https://zipcloud.ibsnet.co.jp/api/search?zipcode=\${zip}\`;　
+    // 悪意のあるサイトにアクセス
 fetch(url)
 .then(res => res.json())
 .then(data => {
