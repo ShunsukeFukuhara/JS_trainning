@@ -1,6 +1,6 @@
 /* eslint no-sparse-arrays: 0 */
 
-import { sum, join, reverse, every, some } from "./index.ts";
+import { sum, join, reverse, every, some } from "./index.js";
 
 test("sum", () => {
   expect(sum()).toStrictEqual(0);
@@ -44,7 +44,7 @@ test("every", () => {
         arr[index + 1]--;
       }
       return elem < 3;
-    }),
+    })
   ).toBeTruthy();
   expect(original).toStrictEqual([1, 1, 2]);
 });
@@ -64,7 +64,7 @@ test("some", () => {
         arr[index + 1]--;
       }
       return elem > 3;
-    }),
+    })
   ).toBeFalsy();
   expect(original).toStrictEqual([1, 1, 2]);
 });
