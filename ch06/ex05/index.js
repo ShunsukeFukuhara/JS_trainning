@@ -19,7 +19,6 @@ const protoObj = Object.create(
       writable: false,
       configurable: false,
     },
-    z,
   }
 );
 
