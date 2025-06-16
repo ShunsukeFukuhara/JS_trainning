@@ -1,4 +1,4 @@
-import { restrict, substract } from "./index.ts";
+import { restrict, substract } from "./index.js";
 
 describe("restrict", () => {
   const symbol = Symbol("test");
@@ -52,7 +52,7 @@ describe("restrict", () => {
       const result = restrict(target, template);
       expect(result).toBe(target);
       expect(result).toEqual(expected);
-    },
+    }
   );
 });
 
@@ -103,7 +103,7 @@ describe("substract", () => {
       const result = substract(target, sources);
       expect(result).toBe(target);
       expect(result).toEqual(expected);
-    },
+    }
   );
 
   test.each([
@@ -129,6 +129,6 @@ describe("substract", () => {
       const result = substract(target, ...sources);
       expect(result).toBe(target);
       expect(result).toEqual(expected);
-    },
+    }
   );
 });
