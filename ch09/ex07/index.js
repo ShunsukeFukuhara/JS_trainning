@@ -1,3 +1,7 @@
+// 以下のコードはSimpleListを継承して要素のpush回数を記録するInstrumentedSimpleListを実装した例である。
+// しかし、このコードは想定した通りに動作しない。テストコードで正しく動作していないことを確認しなさい。
+// この問題を回避するために、継承のかわりに合成(composition)を用いてInstrumentedSimpleListを修正し、テストが通るようにしなさい。
+
 export class LinkedList {
   #head = null;
   #tail = null;
@@ -54,5 +58,28 @@ export class InstrumentedLinkedList extends LinkedList {
   pushAll(...items) {
     super.pushAll(...items);
     this.#pushCount += items.length;
+  }
+}
+
+export class InstrumentedLinkedListModefied {
+  #list = new LinkedList();
+  #pushCount = 0;
+
+  get pushCount() {
+    return this.#pushCount;
+  }
+
+  push(item) {
+    this.#list.push(item);
+    this.#pushCount++;
+  }
+
+  pushAll(...items) {
+    this.#list.pushAll(...items);
+    this.#pushCount += items.length;
+  }
+
+  toString() {
+    return this.#list.toString();
   }
 }
