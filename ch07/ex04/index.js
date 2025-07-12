@@ -62,30 +62,30 @@ console.log(
   })()
 ); // 22.33
 
-const highestMath = () => {
-  let maxScore = 0;
-  const maxScoreStudentNames = [];
-  for (const student of data) {
-    if (student.math > maxScore) {
-      maxScore = student.math;
-      maxScoreStudentNames.length = 0;
-      maxScoreStudentNames.push(student.name);
-    } else if (student.math === maxScore) {
-      maxScoreStudentNames.push(student.name);
-    }
-  }
-  return maxScoreStudentNames;
-};
+// const highestMath = () => {
+//   let maxScore = 0;
+//   const maxScoreStudentNames = [];
+//   for (const student of data) {
+//     if (student.math > maxScore) {
+//       maxScore = student.math;
+//       maxScoreStudentNames.length = 0;
+//       maxScoreStudentNames.push(student.name);
+//     } else if (student.math === maxScore) {
+//       maxScoreStudentNames.push(student.name);
+//     }
+//   }
+//   return maxScoreStudentNames;
+// };
 
-const highestMathFunc = () => {
-  const maxScore = data.reduce(
-    (max, student) => Math.max(max, student.math),
-    0
-  );
+// const highestMathFunc = () => {
+//   const maxScore = data.reduce(
+//     (max, student) => Math.max(max, student.math),
+//     0
+//   );
 
-  const maxScoreStudentNames = data
-    .filter((student) => student.math === maxScore)
-    .map((student) => student.name);
+//   const maxScoreStudentNames = data
+//     .filter((student) => student.math === maxScore)
+//     .map((student) => student.name);
 
-  return maxScoreStudentNames;
-};
+//   return maxScoreStudentNames;
+// };
