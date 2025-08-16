@@ -5,6 +5,7 @@ export const any =
   (...functions) =>
   (...args) =>
     functions.some((fn) => fn(...args));
+// Applyを使うと呼び出し元のthisを保持できる
 
 // 引数として 2 つの関数を受け取り、1 つ目の関数で発生した例外を 2 つ目の関数の引数として処理し結果を返す新たな関数を返すcatching 関数
 
