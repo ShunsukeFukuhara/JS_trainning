@@ -86,31 +86,78 @@ export function match(pat, s) {
 // seq2 の可変長引数版
 export function seq(...pats) {
   // HINT: seq(p1, p2, p3, p4) = seq2(seq2(seq2(p1, p2), p3), p4)
-  throw new Error("実装してね");
+  // 空パターンは常にマッチしない
+  if (pats.length === 0) {
+    return (str, pos, k) => k(str, pos);
+  }
+
+  // 1つのパターンだけならそのまま返す
+  if (pats.length === 1) {
+    return pats[0];
+  }
+
+  // 最初のパターンから始めて、残りを順に seq2していく
+  return pats.reduce(seq2);
 }
 
 // alt2 の可変長引数版
 export function alt(...pats) {
   // HINT: alt(p1, p2, p3, p4) =  alt2(alt2(alt2(p1, p2), p3), p4)
-  throw new Error("実装してね");
+  // 空パターンは常にマッチしない
+  if (pats.length === 0) {
+    return () => false;
+  }
+
+  // 1つのパターンだけならそのまま返す
+  if (pats.length === 1) {
+    return pats[0];
+  }
+
+  // 最初のパターンから順次比較し、どれかがマッチすれば成功
+  return (str, pos, k) => {
+    for (const pat of pats) {
+      if (pat(str, pos, k)) {
+        return true;
+      }
+    }
+    return false;
+  };
 }
 
 // 任意の1文字にマッチ
 export function dot() {
   // HINT: quote の実装を参考にすると良い
-  throw new Error("実装してね");
+  return (str, pos, k) => {
+    if (pos < str.length) {
+      // 1文字消費して次に進む
+      return k(str, pos + 1);
+    }
+    return false; // 文字列の終端に達している場合はマッチしない
+  };
 }
 
 // [...] に対応 (例: [abc] は charFrom("abc"))
 export function charFrom(s) {
   // HINT: quote の実装を参考にすると良い
-  throw new Error("実装してね");
+  return (str, pos, k) => {
+    if (pos < str.length && s.includes(str[pos])) {
+      // 1文字消費して次に進む
+      return k(str, pos + 1);
+    }
+    return false; // マッチしない場合は false を返す
+  };
 }
 
 // [^...] に対応
 export function charNotFrom(s) {
   // HINT: quote の実装を参考にすると良い
-  throw new Error("実装してね");
+  return (str, pos, k) => {
+    if (pos < str.length && !s.includes(str[pos])) {
+      // 1文字消費して次に進む
+      return k(str, pos + 1);
+    }
+    return false; // マッチしない場合は false を返す
+  };
 }
 
 // 繰り返し (min 回数以上 max 回数以下)
@@ -118,7 +165,25 @@ export function repeat(pat, min = 0, max = Infinity) {
   // HINT: 再帰を上手く使うこと
   // パターン P の繰り返し `P{min,max}` は min > 0 の時 `(P)(P{min-1,max-1})` と分解できる
   // seq2, alt2 を上手く使うと良い
-  throw new Error("実装してね");
+  return (str, pos, k) => {
+    // 文字列の長さを上限に
+    const maxRepeat = Math.min(max, str.length - pos);
+
+    // 再帰的にマッチを試す
+    const tryRepeat = (count, currentPos) => {
+      if (count >= min) {
+        // 最小回数以上なら継続を試す
+        if (k(str, currentPos)) return true;
+      }
+      // 最大回数に達したら終了
+
+      if (count === maxRepeat) return false;
+      // 次の1回を試す
+      return pat(str, currentPos, (s, np) => tryRepeat(count + 1, np));
+    };
+
+    return tryRepeat(0, pos);
+  };
 }
 
 // 正規表現 /([Jj]ava([Ss]cript)?) is fun/ は以下
