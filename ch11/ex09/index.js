@@ -176,7 +176,6 @@ export function repeat(pat, min = 0, max = Infinity) {
         if (k(str, currentPos)) return true;
       }
       // 最大回数に達したら終了
-
       if (count === maxRepeat) return false;
       // 次の1回を試す
       return pat(str, currentPos, (s, np) => tryRepeat(count + 1, np));
