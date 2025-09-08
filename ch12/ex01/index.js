@@ -1,6 +1,7 @@
 import { counterIter, counterGen } from "./counters.js";
 
 // 明示的にイテレータプロトコルの next() を呼び出す
+// eslint-disable-next-line no-unused-vars
 const textNext = () => {
   console.log("testIter");
   const iter = counterIter(2);
@@ -18,6 +19,7 @@ const textNext = () => {
 // textNext();
 
 // 明示的にイテレータプロトコルの return() を呼び出す
+// eslint-disable-next-line no-unused-vars
 const testReturn = () => {
   console.log("testIter");
   const iter = counterIter(5);
@@ -37,6 +39,7 @@ const testReturn = () => {
 // testReturn();
 
 // 明示的にイテレータプロトコルの throw() を呼び出す
+// eslint-disable-next-line no-unused-vars
 const testThrow = () => {
   console.log("testIter");
   try {
@@ -72,6 +75,7 @@ const testThrow = () => {
 // testThrow();
 
 // for-of ループを実行
+// eslint-disable-next-line no-unused-vars
 const testForOf = () => {
   console.log("testIter");
   for (const v of counterIter(2)) {
@@ -87,6 +91,7 @@ const testForOf = () => {
 // testForOf();
 
 // for-of ループを実行途中で break
+// eslint-disable-next-line no-unused-vars
 const testForOfBreak = () => {
   console.log("testIter");
   for (const v of counterIter(5)) {
