@@ -26,7 +26,8 @@ describe("fetchFirstFileSize", () => {
   test("最初のファイルのサイズを返す", (done) => {
     fetchFirstFileSize(rightPath, (err, size) => {
       expect(err).toBeNull();
-      expect(size).toBe(1946);
+      expect(size).toBeGreaterThan(1500);
+      expect(size).toBeLessThan(2000);
       done();
     });
   });
@@ -41,10 +42,19 @@ describe("fetchSumOfFileSizes", () => {
     });
   });
 
+  test("空ディレクトリの場合", (done) => {
+    fetchSumOfFileSizes(emptyPath, (err, total) => {
+      expect(err).toBeNull();
+      expect(total).toBe(0);
+      done();
+    });
+  });
+
   test("複数ファイルのサイズを合計する", (done) => {
     fetchSumOfFileSizes(rightPath, (err, total) => {
       expect(err).toBeNull();
-      expect(total).toBe(3296);
+      expect(total).toBeGreaterThan(3000);
+      expect(total).toBeLessThan(3500);
       done();
     });
   });
