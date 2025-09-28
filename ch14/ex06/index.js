@@ -24,19 +24,3 @@ export const makeProxyAndLogs = (obj) => {
   const proxy = new Proxy(obj, handler);
   return [proxy, logs];
 };
-
-// NOTE: 以下の例では makeProxyAndLogs という関数を作成したものとしている:
-
-const a = {
-  p: 1,
-  f: (x, y) => {
-    return x + y;
-  },
-};
-
-const [proxy, logs] = makeProxyAndLogs(a);
-
-console.log(logs); // []
-console.log(proxy.p); // 1
-console.log(proxy.f(1, 2)); // 3
-console.log(logs); // [{ name: "c", args: [1, 2], timestamp: ... }]
