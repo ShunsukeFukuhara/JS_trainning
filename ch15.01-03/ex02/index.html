@@ -1,0 +1,21 @@
+<!-- ブラウザで動的なスクリプトのインポート (await import(url)) が出来ることを試しなさい。
+適当な HTML ページを作成し、その中で以下のコードを実行してページ内のテキストの色が赤になることを確認しなさい。
+またその動作確認方法を文書で記述しなさい。 -->
+
+<!DOCTYPE html charset="utf-8">
+<html lang="ja">
+  <head>
+    <title>Simple ToDo</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <script type="module">
+      const { $ } = await import(
+        "https://releases.jquery.com/git/jquery-git.module.min.js"
+      );
+      $("*").css("color", "red");
+    </script>
+  </head>
+  <body>
+    <p>テキストの色が赤くなれば成功</p>
+  </body>
+</html>
