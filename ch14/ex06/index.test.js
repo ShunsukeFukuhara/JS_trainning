@@ -1,27 +1,5 @@
 import { makeProxyAndLogs } from "./index.js";
 
-// 任意のオブジェクトを引数に取る
-// そのオブジェクトの任意のメソッド呼び出しに対して、以下を持つオブジェクトを配列に追加して保存する Proxy を作成する。言い換えると Proxy 経由のオブジェクトのメソッド呼び出し履歴を配列に記録する
-// 呼び出された時刻
-// メソッド名
-// パラメータ(引数)
-// Proxy と 配列 双方への参照を返却する
-// NOTE: 以下の例では makeProxyAndLogs という関数を作成したものとしている:
-
-// const a = {
-//   p: 1,
-//   f: (x, y) => {
-//     return x + y;
-//   },
-// };
-
-// const [proxy, logs] = makeProxyAndLogs(a);
-
-// console.log(logs); // []
-// console.log(proxy.p); // 1
-// console.log(proxy.f(1, 2)); // 3
-// console.log(logs); // [{ name: "a", args: [1, 2], timestamp: ... }]
-
 describe("makeProxyAndLogs", () => {
   test("メソッド呼び出しがログに記録されること", () => {
     const obj = {
