@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Product filter", () => {
   test.beforeEach(async ({ page }) => {
-    // ローカルのHTMLを開く
     await page.goto("/ch15.01-03/ex14/index.html");
   });
 
