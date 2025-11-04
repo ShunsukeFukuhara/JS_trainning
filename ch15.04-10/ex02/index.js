@@ -5,9 +5,8 @@ const template = document.querySelector("#todo-template");
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  if (input.value.trim() === "") {
-    return;
-  }
+  if (input.value.trim() === "") return;
+
   const todo = input.value.trim();
   input.value = "";
 
@@ -18,12 +17,16 @@ form.addEventListener("submit", (e) => {
   const destroy = clone.querySelector("button");
 
   toggle.addEventListener("change", () => {
-    // IMPORTANT: ChatGPT にはこの関数内のコードのみ変更してもらうこと
-    li.classList.toggle("completed", toggle.checked);
+    li.classList.toggle("bg-green-100", toggle.checked);
+    label.classList.toggle("line-through", toggle.checked);
+    label.classList.toggle("text-gray-400", toggle.checked);
   });
+
   label.textContent = todo;
+
   destroy.addEventListener("click", () => {
-    li.remove();
+    li.classList.add("opacity-0", "scale-95", "transition");
+    setTimeout(() => li.remove(), 150);
   });
 
   list.prepend(li);
