@@ -29,12 +29,12 @@ test.describe("<inline-circle> custom element", () => {
     });
 
     expect(styles).not.toBeNull();
-    expect(styles!.display).toBe("inline-block");
-    expect(styles!.borderRadius).toBe("50%");
-    expect(styles!.borderColor).toBe("rgb(0, 128, 0)"); // greenではなくrgb表記
-    expect(styles!.borderStyle).toBe("dashed");
-    expect(styles!.borderWidth).toBe("2px");
-    expect(styles!.transform).not.toBe("none");
+    expect(styles.display).toBe("inline-block");
+    expect(styles.borderRadius).toBe("50%");
+    expect(styles.borderColor).toBe("rgb(0, 128, 0)"); // greenではなくrgb表記
+    expect(styles.borderStyle).toBe("dashed");
+    expect(styles.borderWidth).toBe("2px");
+    expect(styles.transform).not.toBe("none");
   });
 
   test("diameter 属性でサイズが変わる", async ({ page }) => {
@@ -51,8 +51,8 @@ test.describe("<inline-circle> custom element", () => {
     });
 
     expect(size).not.toBeNull();
-    expect(size!.width).toBe("40px");
-    expect(size!.height).toBe("40px");
+    expect(size.width).toBe("40px");
+    expect(size.height).toBe("40px");
   });
 
   test("color属性で背景色が変わる", async ({ page }) => {
@@ -72,8 +72,7 @@ test.describe("<inline-circle> custom element", () => {
 
   test("JSプロパティからセットしても反映される", async ({ page }) => {
     await page.evaluate(() => {
-      // Element型にはカスタムのプロパティは存在しないため any にキャストする。
-      const el: any = document.querySelector("inline-circle");
+      const el = document.querySelector("inline-circle");
       if (el) {
         el.diameter = "50px";
         el.color = "blue";
@@ -88,7 +87,7 @@ test.describe("<inline-circle> custom element", () => {
     });
 
     expect(style).not.toBeNull();
-    expect(style!.width).toBe("50px");
-    expect(style!.background).toBe("rgb(0, 0, 255)");
+    expect(style.width).toBe("50px");
+    expect(style.background).toBe("rgb(0, 0, 255)");
   });
 });
