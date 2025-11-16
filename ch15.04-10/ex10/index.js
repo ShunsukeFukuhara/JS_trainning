@@ -135,8 +135,9 @@ pauseButton.addEventListener("click", () => {
 
 renderGrid(grid);
 
-const gliderGunButton = document.querySelector("#gliderGun");
+// おまけ
 // クリックしたら盤面をグライダー銃にする
+const gliderGunButton = document.querySelector("#gliderGun");
 gliderGunButton.addEventListener("click", () => {
   const gunPattern = [
     [1, 5],
