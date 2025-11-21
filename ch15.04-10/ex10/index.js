@@ -184,8 +184,8 @@ gliderGunButton.addEventListener("click", () => {
     .map(() => new Array(COLS).fill(false));
 
   // グライダー銃のパターンをセットする
-  gunPattern.forEach(([row, col]) => {
-    newGrid[col][row] = true;
+  gunPattern.forEach(([col, row]) => {
+    newGrid[col][row] = true; // 軸取り間違えた
   });
 
   grid = newGrid;
