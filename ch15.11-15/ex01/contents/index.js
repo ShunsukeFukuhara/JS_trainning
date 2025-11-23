@@ -178,16 +178,17 @@ class TaskAPI {
     charset: "utf-8",
   };
 
-  /**
-   * タスク一覧を取得する
-   * @returns {Promise<Task[]>} - タスク一覧
-   * @throws {APIError} - 取得に失敗した場合
-   */
-  async fetchTasks() {
-    const response = await fetch(this.#BASE_URL, {
-      method: "GET",
+  async #fetch(path, method, body = null) {
+    const options = {
+      method,
       headers: this.#HEADERS,
-    });
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${this.#BASE_URL}${path}`, options);
 
     // エラーの場合
     if (!response.ok) {
@@ -199,7 +200,20 @@ class TaskAPI {
     }
 
     // 成功した場合
-    const data = await response.json();
+    if (response.status === 204) {
+      // No Contentの場合は何も返さない
+      return;
+    }
+    return await response.json();
+  }
+
+  /**
+   * タスク一覧を取得する
+   * @returns {Promise<Task[]>} - タスク一覧
+   * @throws {APIError} - 取得に失敗した場合
+   */
+  async fetchTasks() {
+    const data = await this.#fetch("", "GET");
     return data.items.map((task) => new Task(task.id, task.name, task.status));
   }
 
@@ -210,22 +224,7 @@ class TaskAPI {
    * @throws {APIError} - 取得に失敗した場合
    */
   async fetchTaskById(id) {
-    const response = await fetch(`${this.#BASE_URL}/${id}`, {
-      method: "GET",
-      headers: this.#HEADERS,
-    });
-
-    // エラーの場合
-    if (!response.ok) {
-      const err = await response.json();
-      throw new APIError({
-        message: err.message,
-        status: response.status,
-      });
-    }
-
-    // 成功した場合
-    const data = await response.json();
+    const data = await this.#fetch(`/${id}`, "GET");
     return new Task(data.id, data.name, data.status);
   }
 
@@ -236,23 +235,7 @@ class TaskAPI {
    * @throws {APIError} - 作成に失敗した場合
    */
   async createTask(name) {
-    const response = await fetch(this.#BASE_URL, {
-      method: "POST",
-      headers: this.#HEADERS,
-      body: JSON.stringify({ name }),
-    });
-
-    // エラーの場合
-    if (!response.ok) {
-      const err = await response.json();
-      throw new APIError({
-        message: err.message,
-        status: response.status,
-      });
-    }
-
-    // 成功した場合
-    const data = await response.json();
+    const data = await this.#fetch("", "POST", { name });
     return new Task(data.id, data.name, data.status);
   }
 
@@ -266,24 +249,7 @@ class TaskAPI {
   async updateTask(params) {
     // bodyに含めるプロパティだけを集める
     const { id, ...body } = params;
-
-    const response = await fetch(`${this.#BASE_URL}/${id}`, {
-      method: "PATCH",
-      headers: this.#HEADERS,
-      body: JSON.stringify(body),
-    });
-
-    // エラーの場合
-    if (!response.ok) {
-      const err = await response.json();
-      throw new APIError({
-        message: err.message,
-        status: response.status,
-      });
-    }
-
-    // 成功した場合
-    const data = await response.json();
+    const data = await this.#fetch(`/${id}`, "PATCH", body);
     return new Task(data.id, data.name, data.status);
   }
 
@@ -294,21 +260,7 @@ class TaskAPI {
    * @throws {APIError} - 削除に失敗した場合
    */
   async deleteTask(id) {
-    const response = await fetch(`${this.#BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: this.#HEADERS,
-    });
-
-    // エラーの場合
-    if (!response.ok) {
-      const err = await response.json();
-      throw new APIError({
-        message: err.message,
-        status: response.status,
-      });
-    }
-
-    // 成功した場合、そのまま返す
+    await this.#fetch(`/${id}`, "DELETE");
     return;
   }
 }
