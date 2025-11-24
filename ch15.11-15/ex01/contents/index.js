@@ -4,26 +4,24 @@ const input = document.querySelector("#new-todo");
 
 // エラー発生時の共通処理で関数をラップする
 // catchしたエラーはalertで表示し、そのまま例外を投げない
-const withHandler = (fn) => {
-  return async (...args) => {
-    try {
-      const result = await fn(...args);
-      return result;
-    } catch (err) {
-      if (err instanceof APIError) {
-        alert(`API Error: ${err.message} (status: ${err.status})`);
-      } else {
-        alert(`Unexpected Error: ${err.message}`);
-      }
+const withHandler = async (callback) => {
+  try {
+    return await callback();
+  } catch (err) {
+    if (err instanceof APIError) {
+      alert(`API Error: ${err.message} (status: ${err.status})`);
+    } else {
+      alert(`Unexpected Error: ${err.message}`);
     }
-  };
+    return undefined;
+  }
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log(document.cookie === "" ? "No cookies set" : document.cookie);
   // TODO: ここで API を呼び出してタスク一覧を取得し、
   // 成功したら取得したタスクを appendToDoItem で ToDo リストの要素として追加しなさい
-  const tasks = await withHandler(() => new TaskAPI().fetchTasks())();
+  const tasks = await withHandler(new TaskAPI().fetchTasks);
   (tasks ?? []).forEach((task) => {
     appendToDoItem(task);
   });
@@ -45,7 +43,7 @@ form.addEventListener("submit", async (e) => {
 
   // TODO: ここで API を呼び出して新しいタスクを作成し
   // 成功したら作成したタスクを appendToDoItem で ToDo リストの要素として追加しなさい
-  const newTask = await withHandler(() => new TaskAPI().createTask(todo))();
+  const newTask = await withHandler(() => new TaskAPI().createTask(todo));
 
   if (!newTask) {
     return;
@@ -76,7 +74,7 @@ function appendToDoItem(task) {
         id: task.id,
         status: newStatus,
       })
-    )();
+    );
 
     if (!updated) {
       return;
@@ -96,7 +94,7 @@ function appendToDoItem(task) {
   // 成功したら elem を削除しなさい
   destroy.addEventListener("click", async () => {
     // APIを呼び出してタスクを削除
-    await withHandler(() => new TaskAPI().deleteTask(task.id))();
+    await withHandler(() => new TaskAPI().deleteTask(task.id));
 
     if (!task) {
       return;
@@ -178,7 +176,8 @@ class TaskAPI {
     charset: "utf-8",
   };
 
-  async #fetch(path, method, body = null) {
+  // 共通のfetch処理
+  #fetch = async (path, method, body = null) => {
     const options = {
       method,
       headers: this.#HEADERS,
@@ -205,17 +204,17 @@ class TaskAPI {
       return;
     }
     return await response.json();
-  }
+  };
 
   /**
    * タスク一覧を取得する
    * @returns {Promise<Task[]>} - タスク一覧
    * @throws {APIError} - 取得に失敗した場合
    */
-  async fetchTasks() {
+  fetchTasks = async () => {
     const data = await this.#fetch("", "GET");
     return data.items.map((task) => new Task(task.id, task.name, task.status));
-  }
+  };
 
   /**
    * タスクの ID を指定して取得する
@@ -223,10 +222,10 @@ class TaskAPI {
    * @returns {Promise<Task>} - 取得したタスク
    * @throws {APIError} - 取得に失敗した場合
    */
-  async fetchTaskById(id) {
+  fetchTaskById = async (id) => {
     const data = await this.#fetch(`/${id}`, "GET");
     return new Task(data.id, data.name, data.status);
-  }
+  };
 
   /**
    * 新しいタスクを作成する
@@ -234,10 +233,10 @@ class TaskAPI {
    * @returns {Promise<Task>} - 作成したタスク
    * @throws {APIError} - 作成に失敗した場合
    */
-  async createTask(name) {
+  createTask = async (name) => {
     const data = await this.#fetch("", "POST", { name });
     return new Task(data.id, data.name, data.status);
-  }
+  };
 
   /**
    * タスクの一部を更新する
@@ -246,12 +245,12 @@ class TaskAPI {
    * @returns {Promise<Task>} - 更新したタスク
    * @throws {APIError} - 更新に失敗した場合
    */
-  async updateTask(params) {
+  updateTask = async (params) => {
     // bodyに含めるプロパティだけを集める
     const { id, ...body } = params;
     const data = await this.#fetch(`/${id}`, "PATCH", body);
     return new Task(data.id, data.name, data.status);
-  }
+  };
 
   /**
    * タスクを削除する
@@ -259,8 +258,8 @@ class TaskAPI {
    * @returns {Promise<void>}
    * @throws {APIError} - 削除に失敗した場合
    */
-  async deleteTask(id) {
+  deleteTask = async (id) => {
     await this.#fetch(`/${id}`, "DELETE");
     return;
-  }
+  };
 }
