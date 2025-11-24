@@ -134,11 +134,11 @@ export class TaskAPI {
   /**
    * タスクを削除する
    * @param {number} id - タスクID
-   * @returns {Promise<void>}
+   * @returns {Promise<true>} - 削除に成功した場合は true を返す
    * @throws {APIError} - 削除に失敗した場合
    */
   deleteTask = async (id) => {
     await this.#fetch(`/${id}`, "DELETE");
-    return;
+    return true;
   };
 }

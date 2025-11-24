@@ -129,9 +129,11 @@ function appendToDoItem(task) {
   // 成功したら elem を削除しなさい
   destroy.addEventListener("click", async () => {
     // APIを呼び出してタスクを削除
-    await withHandler(() => new TaskAPI().deleteTask(task.id));
+    const isDeleted = await withHandler(() =>
+      new TaskAPI().deleteTask(task.id)
+    );
 
-    if (!task) {
+    if (!isDeleted) {
       return;
     }
 
