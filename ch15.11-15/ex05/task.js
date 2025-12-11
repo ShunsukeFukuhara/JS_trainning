@@ -15,14 +15,21 @@ export class Task {
     Object.freeze(this);
   }
 
-  static create(name) {
-    const id = crypto.randomUUID();
-    return new Task(id, name, "active");
+  static createNew(name) {
+    // 作成時点ではidは割り当てられていないので仮の値を入れる
+    return new Task("temp", name, "active");
   }
 
   toggledTask() {
     const newStatus = this.isActive ? "done" : "active";
     return new Task(this.#id, this.#name, newStatus);
+  }
+
+  idAssignedTask(newId) {
+    if (this.#id !== "temp") {
+      throw new Error("ID is already assigned");
+    }
+    return new Task(newId, this.#name, this.#status);
   }
 
   get id() {
@@ -46,6 +53,13 @@ export class Task {
   }
 
   toJSON() {
+    if (this.#id === "temp") {
+      return {
+        name: this.#name,
+        status: this.#status,
+      };
+    }
+
     return {
       id: this.#id,
       name: this.#name,
@@ -54,18 +68,21 @@ export class Task {
   }
 }
 
+const taskUpdatedEventKey = "task-updated";
+
 /**
  * IndexedDBとデータ同期をしながらタスクを管理するクラス
  */
-
 export class TaskRepository {
   #dbName = "task-db";
   #storeName = "tasks";
   #version = 1;
   #db = null;
+  #channel = null;
 
   async init() {
     this.#db = await this.#openDB();
+    this.#channel = new BroadcastChannel("task_repository_channel");
   }
 
   #openDB() {
@@ -76,7 +93,10 @@ export class TaskRepository {
         const db = event.target.result;
 
         if (!db.objectStoreNames.contains(this.#storeName)) {
-          db.createObjectStore(this.#storeName, { keyPath: "id" });
+          db.createObjectStore(this.#storeName, {
+            keyPath: "id",
+            autoIncrement: true,
+          });
         }
       };
 
@@ -93,6 +113,18 @@ export class TaskRepository {
   #getStore(mode = "readonly") {
     const tx = this.#db.transaction(this.#storeName, mode);
     return tx.objectStore(this.#storeName);
+  }
+
+  #notifyTaskUpdated() {
+    this.#channel.postMessage(taskUpdatedEventKey);
+  }
+
+  registerOnTaskUpdated(callback) {
+    this.#channel.addEventListener("message", (event) => {
+      if (event.data === taskUpdatedEventKey) {
+        callback();
+      }
+    });
   }
 
   async getTasks() {
@@ -142,8 +174,14 @@ export class TaskRepository {
     return new Promise((resolve, reject) => {
       const request = store.add(task.toJSON());
 
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        const newId = request.result; // 自動採番された id
+        // 新しいidを持つTaskオブジェクトを返す
+        return resolve(task.idAssignedTask(newId));
+      };
       request.onerror = () => reject(request.error);
+
+      this.#notifyTaskUpdated();
     });
   }
 
@@ -155,6 +193,8 @@ export class TaskRepository {
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+
+      this.#notifyTaskUpdated();
     });
   }
 
@@ -166,6 +206,8 @@ export class TaskRepository {
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+
+      this.#notifyTaskUpdated();
     });
   }
 
@@ -177,6 +219,25 @@ export class TaskRepository {
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+
+      this.#notifyTaskUpdated();
     });
+  }
+
+  close() {
+    if (this.#db) {
+      try {
+        this.#db.close();
+      } catch (_) {
+        // ignore
+      }
+    }
+    if (this.#channel) {
+      try {
+        this.#channel.close();
+      } catch (_) {
+        // ignore
+      }
+    }
   }
 }

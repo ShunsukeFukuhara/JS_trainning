@@ -1,14 +1,16 @@
 import { Task, TaskRepository } from "./task.js";
 import { test } from "@jest/globals";
+// IndexedDBのモックを自動で有効化
+import "fake-indexeddb/auto";
 
 // Taskのテスト
 describe("Task", () => {
-  test("create()でactive状態のTaskが生成される", () => {
-    const task = Task.create("test");
+  test("createNew()でactive状態の仮idを持つTaskが生成される", () => {
+    const task = Task.createNew("test");
 
     expect(task.name).toBe("test");
     expect(task.status).toBe("active");
-    expect(task.id).toBeDefined();
+    expect(task.id).toBe("temp");
   });
 
   test("isActive/isDoneが正しく判定される", () => {
@@ -32,6 +34,35 @@ describe("Task", () => {
     expect(toggled.name).toBe("a");
     expect(toggled).not.toBe(task);
   });
+
+  test("idAssignedTask()で仮idが本物のidに置き換えられる", () => {
+    const task = new Task("temp", "a", "active");
+    const assigned = task.idAssignedTask("100");
+
+    expect(assigned.id).toBe("100");
+    expect(assigned.name).toBe("a");
+    expect(assigned.status).toBe("active");
+    expect(assigned).not.toBe(task);
+  });
+
+  test("idAssignedTask()は本物のidが既に割り当てられている場合例外を投げる", () => {
+    const task = new Task("1", "a", "active");
+    expect(() => {
+      task.idAssignedTask("100");
+    }).toThrow();
+  });
+
+  test("toJSON()で適切なオブジェクトが得られる", () => {
+    const task = new Task("1", "a", "active");
+    const json = task.toJSON();
+    expect(json).toEqual({ id: "1", name: "a", status: "active" });
+  });
+
+  test("toJSON()は仮idのときidを含まないオブジェクトを返す", () => {
+    const task = new Task("temp", "a", "active");
+    const json = task.toJSON();
+    expect(json).toEqual({ name: "a", status: "active" });
+  });
 });
 
 // TaskRepositoryのテスト
@@ -44,38 +75,34 @@ describe("TaskRepository", () => {
     await repo.clearTasks(); // DB 初期化
   });
 
+  afterEach(async () => {
+    await repo.close();
+  });
+
   test("初期状態ではtasksは空", async () => {
     const tasks = await repo.getTasks();
     expect(tasks).toEqual([]);
   });
 
-  test("addTask()でタスクが追加される", async () => {
-    const task = new Task("1", "test", "active");
-
-    await repo.addTask(task);
-
-    const tasks = await repo.getTasks();
-    expect(tasks.length).toBe(1);
-    expect(tasks[0].name).toBe("test");
+  test("addTask()で仮タスクが追加され、idを持つタスクになる", async () => {
+    const task = Task.createNew("test");
+    const savedTask = await repo.addTask(task);
+    expect(savedTask.id).not.toBe("temp");
   });
 
   test("removeTask()で指定IDのタスクが削除される", async () => {
-    const t1 = new Task("1", "a", "active");
-    const t2 = new Task("2", "b", "active");
+    const t1 = await repo.addTask(Task.createNew("a"));
+    const t2 = await repo.addTask(Task.createNew("b"));
 
-    await repo.addTask(t1);
-    await repo.addTask(t2);
-
-    await repo.removeTask("1");
+    await repo.removeTask(t1.id);
 
     const tasks = await repo.getTasks();
     expect(tasks.length).toBe(1);
-    expect(tasks[0].id).toBe("2");
+    expect(tasks[0].id).toBe(t2.id);
   });
 
   test("updateTask()でタスクが更新される", async () => {
-    const task = new Task("1", "a", "active");
-    await repo.addTask(task);
+    const task = await repo.addTask(Task.createNew("a"));
 
     const updated = task.toggledTask();
     await repo.updateTask(updated);
@@ -85,9 +112,9 @@ describe("TaskRepository", () => {
   });
 
   test("clearTasks()で全削除される", async () => {
-    await repo.addTask(new Task("1", "a", "active"));
-    await repo.addTask(new Task("2", "b", "done"));
-
+    await repo.addTask(Task.createNew("a"));
+    const taskB = await repo.addTask(Task.createNew("b"));
+    await repo.updateTask(taskB.toggledTask());
     await repo.clearTasks();
 
     const tasks = await repo.getTasks();
@@ -98,8 +125,9 @@ describe("TaskRepository", () => {
     const repo1 = new TaskRepository();
     await repo1.init();
 
-    await repo1.addTask(new Task("1", "a", "active"));
-    await repo1.addTask(new Task("2", "b", "done"));
+    await repo1.addTask(Task.createNew("a"));
+    const task2 = await repo1.addTask(Task.createNew("b"));
+    await repo1.updateTask(task2.toggledTask());
 
     const repo2 = new TaskRepository();
     await repo2.init();
@@ -108,15 +136,19 @@ describe("TaskRepository", () => {
     expect(tasks.length).toBe(2);
     expect(tasks[0]).toBeInstanceOf(Task);
     expect(tasks[1].status).toBe("done");
+
+    await repo1.close();
+    await repo2.close();
   });
 
   test("getTaskById()でID指定でタスクが取得できる", async () => {
-    const task = new Task("1", "a", "active");
-    await repo.addTask(task);
+    const task = await repo.addTask(Task.createNew("a"));
+    await repo.updateTask(task.toggledTask());
 
-    const fetched = await repo.getTaskById("1");
-    expect(fetched.id).toBe("1");
+    const fetched = await repo.getTaskById(task.id);
+    expect(fetched.id).toBe(task.id);
     expect(fetched.name).toBe("a");
+    expect(fetched.status).toBe("done");
   });
 
   test("getTaskById()で存在しないIDを指定すると例外が投げられる", async () => {

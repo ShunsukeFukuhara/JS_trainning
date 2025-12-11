@@ -1,8 +1,6 @@
 import { Task, TaskRepository } from "./task.js";
 
-(async (repository) => {
-  await repository.init();
-
+((repository) => {
   const form = document.querySelector("#new-todo-form");
   const list = document.querySelector("#todo-list");
   const input = document.querySelector("#new-todo");
@@ -28,19 +26,19 @@ import { Task, TaskRepository } from "./task.js";
     };
     checkToggle();
 
-    toggle.addEventListener("change", async () => {
+    toggle.addEventListener("change", () => {
       // idで指定されたタスクを取ってくる
       // taskはcreateItem呼び出し時の古いままのオブジェクトなので、最新の状態を取ってくる必要がある
-      const target = await repository.getTaskById(task.id);
-      await repository.updateTask(target.toggledTask());
+      const changedTask = repository.getTaskById(task.id).toggledTask();
+      repository.updateTask(changedTask);
       checkToggle();
     });
 
     // 削除ボタン
     const destroy = document.createElement("button");
     destroy.textContent = "❌";
-    destroy.addEventListener("click", async () => {
-      await repository.removeTask(task.id);
+    destroy.addEventListener("click", () => {
+      repository.removeTask(task.id);
       elem.remove();
     });
 
@@ -49,7 +47,7 @@ import { Task, TaskRepository } from "./task.js";
     return elem;
   };
 
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", (e) => {
     // TODO: ここで form のイベントのキャンセルを実施しなさい (なぜでしょう？)
     // 理由: フォームのデフォルトの送信動作を防ぎ、ページのリロードを防ぐため
     e.preventDefault();
@@ -63,8 +61,8 @@ import { Task, TaskRepository } from "./task.js";
     input.value = "";
 
     // Taskの作成と保存
-    // 保存した後、idが割り当てられたTaskオブジェクトが返される
-    const newTask = await repository.addTask(Task.createNew(todo));
+    const newTask = Task.create(todo);
+    repository.addTask(newTask);
 
     // ここから #todo-list に追加する要素を構築する
     const item = createItem(newTask);
@@ -73,19 +71,19 @@ import { Task, TaskRepository } from "./task.js";
   });
 
   // ページ読み込み時に保存されているタスクを表示する
-  const tasks = await repository.getTasks();
+  const tasks = repository.getTasks();
   tasks.forEach((task) => {
     const item = createItem(task);
     list.append(item);
   });
 
-  // storageイベントを検知したら、一度listをクリアしてから再描画するコールバックを登録
-  repository.registerOnTaskUpdated(async () => {
+  // storageイベントを検知したら、一度listをクリアしてから再描画する
+  window.addEventListener("storage", () => {
     // listの中身をクリア
     list.textContent = "";
 
     // 再描画
-    const tasks = await repository.getTasks();
+    const tasks = repository.getTasks({ enforceReload: true });
     tasks.forEach((task) => {
       const item = createItem(task);
       list.append(item);

@@ -1,26 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-const RESET_URL = "http://127.0.0.1:5500/ch15.11-15/ex05/reset.html";
-const PAGE_URL = "http://127.0.0.1:5500/ch15.11-15/ex05/index.html";
+const PAGE_URL = "http://127.0.0.1:5500/ch15.11-15/ex06/index.html";
 
 test.beforeEach(async ({ page }) => {
-  // DBを開かない空ページへ移動
-  // これは、index.htmlを開いてしまうと、IndexedDBが独占されてしまい、外から削除できなくなるため
-  // また、indexedDBは同一オリジンでないとアクセスできないため、同一オリジンの空ページを用意している
-  await page.goto(RESET_URL);
+  await page.goto(PAGE_URL);
 
-  // IndexedDBを安全に削除
+  // localStorage 初期化
   await page.evaluate(() => {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.deleteDatabase("task-db");
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-      req.onblocked = () => reject(new Error("Database deletion blocked"));
-    });
+    localStorage.clear();
   });
 
-  // 本来のアプリをロード
-  await page.goto(PAGE_URL);
+  await page.reload();
 });
 
 test("タスクを追加できる", async ({ page }) => {
@@ -191,4 +181,44 @@ test("複数タブでstorageの更新が同期される", async ({ browser }) =>
   const secondItem = page1.locator("#todo-list li").nth(1);
   const secondLabel = secondItem.locator("label");
   await expect(secondLabel).toHaveCSS("text-decoration-line", "none");
+});
+
+test("localStorage例外時でもgetTasksはクラッシュしない", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(PAGE_URL);
+  await page.evaluate(() => {
+    // localStorage.getItemを例外を投げるようにモック化
+    localStorage.getItem = () => {
+      throw new DOMException("QuotaExceededError");
+    };
+  });
+
+  // ページをリロードしてもクラッシュしないこと
+  await page.reload();
+  const list = page.locator("#todo-list li");
+  await expect(list).toHaveCount(0);
+});
+
+test("localStorage例外時でもタスク追加はクラッシュしない", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(PAGE_URL);
+  await page.evaluate(() => {
+    // localStorage.setItemを例外を投げるようにモック化
+    localStorage.setItem = () => {
+      throw new DOMException("QuotaExceededError");
+    };
+  });
+  const input = page.locator("#new-todo");
+
+  // タスク追加してもクラッシュしないこと
+  await input.fill("タスク");
+  await input.press("Enter");
+  const list = page.locator("#todo-list li");
+  await expect(list).toHaveCount(1);
 });
