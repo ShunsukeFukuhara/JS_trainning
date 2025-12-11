@@ -1,5 +1,5 @@
 import { Task, TaskRepository } from "./task.js";
-import { test } from "@jest/globals";
+import { test, jest } from "@jest/globals";
 // IndexedDBのモックを自動で有効化
 import "fake-indexeddb/auto";
 
@@ -73,6 +73,14 @@ describe("TaskRepository", () => {
     repo = new TaskRepository();
     await repo.init();
     await repo.clearTasks(); // DB 初期化
+
+    // BroadcastChannelが呼ばれたらspyを仕込む
+    jest.spyOn(global, "BroadcastChannel").mockImplementation(() => {
+      return {
+        postMessage: jest.fn(),
+        close: jest.fn(),
+      };
+    });
   });
 
   afterEach(async () => {
@@ -90,6 +98,16 @@ describe("TaskRepository", () => {
     expect(savedTask.id).not.toBe("temp");
   });
 
+  test("addTask()実行時にBroadcastChannelで通知が送られる", async () => {
+    const task = Task.createNew("test");
+    await repo.addTask(task);
+    expect(global.BroadcastChannel).toHaveBeenCalledWith(
+      "task_repository_channel"
+    );
+    const channelInstance = global.BroadcastChannel.mock.results[0].value;
+    expect(channelInstance.postMessage).toHaveBeenCalledWith("task-updated");
+  });
+
   test("removeTask()で指定IDのタスクが削除される", async () => {
     const t1 = await repo.addTask(Task.createNew("a"));
     const t2 = await repo.addTask(Task.createNew("b"));
@@ -99,6 +117,13 @@ describe("TaskRepository", () => {
     const tasks = await repo.getTasks();
     expect(tasks.length).toBe(1);
     expect(tasks[0].id).toBe(t2.id);
+  });
+
+  test("removeTask()実行時にBroadcastChannelで通知が送られる", async () => {
+    const task = await repo.addTask(Task.createNew("test"));
+    await repo.removeTask(task.id);
+    const channelInstance = global.BroadcastChannel.mock.results[0].value;
+    expect(channelInstance.postMessage).toHaveBeenCalledWith("task-updated");
   });
 
   test("updateTask()でタスクが更新される", async () => {
@@ -111,6 +136,14 @@ describe("TaskRepository", () => {
     expect(tasks[0].status).toBe("done");
   });
 
+  test("updateTask()実行時にBroadcastChannelで通知が送られる", async () => {
+    const task = await repo.addTask(Task.createNew("test"));
+    const updated = task.toggledTask();
+    await repo.updateTask(updated);
+    const channelInstance = global.BroadcastChannel.mock.results[0].value;
+    expect(channelInstance.postMessage).toHaveBeenCalledWith("task-updated");
+  });
+
   test("clearTasks()で全削除される", async () => {
     await repo.addTask(Task.createNew("a"));
     const taskB = await repo.addTask(Task.createNew("b"));
@@ -119,6 +152,13 @@ describe("TaskRepository", () => {
 
     const tasks = await repo.getTasks();
     expect(tasks).toEqual([]);
+  });
+
+  test("clearTasks()実行時にBroadcastChannelで通知が送られる", async () => {
+    await repo.addTask(Task.createNew("test"));
+    await repo.clearTasks();
+    const channelInstance = global.BroadcastChannel.mock.results[0].value;
+    expect(channelInstance.postMessage).toHaveBeenCalledWith("task-updated");
   });
 
   test("init後にIndexedDBの内容が復元される", async () => {
