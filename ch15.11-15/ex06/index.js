@@ -1,6 +1,17 @@
 import { Task, TaskRepository } from "./task.js";
 
 ((repository) => {
+  repository.registerTaskUpdatedListener(() => {
+    // listの中身をクリア
+    list.textContent = "";
+
+    // 再描画
+    const tasks = repository.getTasks({ enforceReload: true });
+    tasks.forEach((task) => {
+      const item = createItem(task);
+      list.append(item);
+    });
+  });
   const form = document.querySelector("#new-todo-form");
   const list = document.querySelector("#todo-list");
   const input = document.querySelector("#new-todo");
@@ -75,18 +86,5 @@ import { Task, TaskRepository } from "./task.js";
   tasks.forEach((task) => {
     const item = createItem(task);
     list.append(item);
-  });
-
-  // storageイベントを検知したら、一度listをクリアしてから再描画する
-  window.addEventListener("storage", () => {
-    // listの中身をクリア
-    list.textContent = "";
-
-    // 再描画
-    const tasks = repository.getTasks({ enforceReload: true });
-    tasks.forEach((task) => {
-      const item = createItem(task);
-      list.append(item);
-    });
   });
 })(new TaskRepository());

@@ -85,6 +85,7 @@ describe("TaskRepository", () => {
 
   afterEach(async () => {
     await repo.close();
+    jest.clearAllMocks();
   });
 
   test("初期状態ではtasksは空", async () => {

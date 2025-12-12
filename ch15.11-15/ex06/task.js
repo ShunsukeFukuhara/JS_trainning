@@ -54,15 +54,46 @@ export class Task {
   }
 }
 
+const taskUpdatedEventKey = "task-updated";
+
 /**
  * sessionStorageとデータ同期をしながらタスクを管理するクラス
  */
 export class TaskRepository {
   #storageKey = "tasks";
   #tasks = [];
+  #channel = null;
 
   constructor() {
     this.#tasks = this.#loadTasks();
+    this.#channel = new BroadcastChannel("task_repository_channel");
+    // 他のタブからの更新通知を受け取り、全く同じ操作をこのセッションでも実行する
+    this.#channel.addEventListener("message", (event) => {
+      const { type, operation, input } = event.data;
+      if (type !== taskUpdatedEventKey) return;
+      switch (operation) {
+        case "add":
+          this.addTask(input, true);
+          break;
+        case "remove":
+          this.removeTask(input, true);
+          break;
+        case "update":
+          this.updateTask(input, true);
+          break;
+        case "clear":
+          this.clearTasks(true);
+          break;
+      }
+    });
+  }
+
+  #notifyTaskUpdated(operation, input) {
+    this.#channel.postMessage({
+      type: taskUpdatedEventKey,
+      operation: operation,
+      input: input,
+    });
   }
 
   #loadTasks() {
@@ -101,6 +132,15 @@ export class TaskRepository {
     }
   }
 
+  registerTaskUpdatedListener(listener) {
+    this.#channel.addEventListener("message", (event) => {
+      const { type } = event.data;
+      if (type === taskUpdatedEventKey) {
+        listener();
+      }
+    });
+  }
+
   getTasks({ enforceReload = false } = {}) {
     if (enforceReload) {
       this.#tasks = this.#loadTasks();
@@ -118,25 +158,45 @@ export class TaskRepository {
     return task;
   }
 
-  addTask(task) {
+  addTask(task, byNotifer = false) {
     this.#tasks.push(task);
     this.#saveTasks();
+    if (!byNotifer) {
+      this.#notifyTaskUpdated("add", task.toJSON());
+    }
   }
 
-  removeTask(taskId) {
+  removeTask(taskId, byNotifer = false) {
     this.#tasks = this.#tasks.filter((task) => task.id !== taskId);
     this.#saveTasks();
+    if (!byNotifer) {
+      this.#notifyTaskUpdated("remove", taskId);
+    }
   }
 
-  updateTask(updatedTask) {
+  updateTask(updatedTask, byNotifer = false) {
     this.#tasks = this.#tasks.map((task) =>
       task.id === updatedTask.id ? updatedTask : task
     );
     this.#saveTasks();
+    if (!byNotifer) {
+      this.#notifyTaskUpdated("update", updatedTask.toJSON());
+    }
   }
 
-  clearTasks() {
+  clearTasks(byNotifer = false) {
     this.#tasks = [];
     this.#saveTasks();
+    if (!byNotifer) {
+      this.#notifyTaskUpdated("clear", null);
+    }
+  }
+
+  close() {
+    try {
+      this.#channel.close();
+    } catch (_) {
+      // ignore
+    }
   }
 }

@@ -65,7 +65,39 @@ describe("TaskRepository", () => {
       configurable: true,
     });
 
+    // BroadcastChannelが呼ばれたらspyを仕込む
+    // postMessageが呼ばれたらjest.fn()で監視できるようにする
+    jest.spyOn(global, "BroadcastChannel").mockImplementation(() => {
+      const listeners = new Map();
+
+      return {
+        postMessage: jest.fn(() => {
+          // テスト側で postMessage を監視できるようにするだけ
+        }),
+
+        close: jest.fn(),
+
+        addEventListener: jest.fn((eventName, callback) => {
+          if (!listeners.has(eventName)) {
+            listeners.set(eventName, []);
+          }
+          listeners.get(eventName).push(callback);
+        }),
+
+        // テスト用イベント発火メソッド
+        __trigger(eventName, event) {
+          const callbacks = listeners.get(eventName) || [];
+          callbacks.forEach((cb) => cb(event));
+        },
+      };
+    });
+
     repo = new TaskRepository();
+  });
+
+  afterEach(async () => {
+    await repo.close();
+    jest.clearAllMocks();
   });
 
   test("初期状態ではtasksは空", () => {
@@ -83,6 +115,22 @@ describe("TaskRepository", () => {
     expect(sessionStorage.setItem).toHaveBeenCalled();
   });
 
+  test("addTask()がBroadcastChannelで通知を送る", () => {
+    const task = new Task("1", "test", "active", 1);
+    repo.addTask(task);
+    expect(global.BroadcastChannel).toHaveBeenCalledWith(
+      "task_repository_channel"
+    );
+
+    const last = global.BroadcastChannel.mock.results[0].value;
+
+    expect(last.postMessage).toHaveBeenCalledWith({
+      type: "task-updated",
+      operation: "add",
+      input: task.toJSON(),
+    });
+  });
+
   test("removeTask()で指定IDのタスクが削除される", () => {
     const t1 = new Task("1", "a", "active", 1);
     const t2 = new Task("2", "b", "active", 2);
@@ -97,6 +145,18 @@ describe("TaskRepository", () => {
     expect(tasks[0].id).toBe("2");
   });
 
+  test("removeTask()がBroadcastChannelで通知を送る", () => {
+    const task = new Task("1", "test", "active", 1);
+    repo.addTask(task);
+    repo.removeTask("1");
+    const last = global.BroadcastChannel.mock.results[0].value;
+    expect(last.postMessage).toHaveBeenCalledWith({
+      type: "task-updated",
+      operation: "remove",
+      input: "1",
+    });
+  });
+
   test("updateTask()でタスクが更新される", () => {
     const task = new Task("1", "a", "active", 1);
     repo.addTask(task);
@@ -108,6 +168,19 @@ describe("TaskRepository", () => {
     expect(tasks[0].status).toBe("done");
   });
 
+  test("updateTask()がBroadcastChannelで通知を送る", () => {
+    const task = new Task("1", "test", "active", 1);
+    repo.addTask(task);
+    const updated = task.toggledTask();
+    repo.updateTask(updated);
+    const last = global.BroadcastChannel.mock.results[0].value;
+    expect(last.postMessage).toHaveBeenCalledWith({
+      type: "task-updated",
+      operation: "update",
+      input: updated.toJSON(),
+    });
+  });
+
   test("clearTasks()で全削除される", () => {
     repo.addTask(new Task("1", "a", "active", 1));
     repo.addTask(new Task("2", "b", "done", 2));
@@ -115,6 +188,17 @@ describe("TaskRepository", () => {
     repo.clearTasks();
 
     expect(repo.getTasks()).toEqual([]);
+  });
+
+  test("clearTasks()がBroadcastChannelで通知を送る", () => {
+    repo.addTask(new Task("1", "test", "active", 1));
+    repo.clearTasks();
+    const last = global.BroadcastChannel.mock.results[0].value;
+    expect(last.postMessage).toHaveBeenCalledWith({
+      type: "task-updated",
+      operation: "clear",
+      input: null,
+    });
   });
 
   test("constructorでsessionStorageの内容が復元される", () => {
@@ -131,6 +215,66 @@ describe("TaskRepository", () => {
     expect(tasks.length).toBe(2);
     expect(tasks[0]).toBeInstanceOf(Task);
     expect(tasks[1].status).toBe("done");
+  });
+
+  test("他タブからaddが届いたらローカルのtasksも更新される", () => {
+    const channel = global.BroadcastChannel.mock.results[0].value;
+
+    channel.__trigger("message", {
+      data: {
+        type: "task-updated",
+        operation: "add",
+        input: { id: "1", name: "test", status: "active" },
+      },
+    });
+
+    const tasks = repo.getTasks();
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].id).toBe("1");
+  });
+
+  test("他タブからremoveが届いたらローカルのtasksも更新される", () => {
+    const task = new Task("1", "a", "active", 1);
+    repo.addTask(task);
+    const channel = global.BroadcastChannel.mock.results[0].value;
+
+    channel.__trigger("message", {
+      data: {
+        type: "task-updated",
+        operation: "remove",
+        input: "1",
+      },
+    });
+    const tasks = repo.getTasks();
+    expect(tasks.length).toBe(0);
+  });
+
+  test("他タブからupdateが届いたらローカルのtasksも更新される", () => {
+    const task = new Task("1", "a", "active", 1);
+    repo.addTask(task);
+    const channel = global.BroadcastChannel.mock.results[0].value;
+    channel.__trigger("message", {
+      data: {
+        type: "task-updated",
+        operation: "update",
+        input: { id: "1", name: "a", status: "done" },
+      },
+    });
+    const tasks = repo.getTasks();
+    expect(tasks[0].status).toBe("done");
+  });
+
+  test("他タブからclearが届いたらローカルのtasksも更新される", () => {
+    repo.addTask(new Task("1", "a", "active", 1));
+    const channel = global.BroadcastChannel.mock.results[0].value;
+    channel.__trigger("message", {
+      data: {
+        type: "task-updated",
+        operation: "clear",
+        input: null,
+      },
+    });
+    expect(repo.getTasks().length).toBe(0);
   });
 
   test("getTasks({ enforceReload: true })で再読み込みされる", () => {
@@ -179,5 +323,25 @@ describe("TaskRepository", () => {
     repo.addTask(new Task("1", "a", "active", 1));
 
     expect(repo.getTasks().length).toBe(1);
+  });
+
+  test("registerTaskUpdatedListener()で登録したリスナーがBroadcastChannelのメッセージで呼ばれる", () => {
+    const listener = jest.fn();
+    repo.registerTaskUpdatedListener(listener);
+
+    const channelInstance = global.BroadcastChannel.mock.results[0].value;
+
+    // 登録されたコールバック
+    // 0番目TaskRepositoryのコンストラクタ内で登録されたlistenerなので、1番目が今回登録したlistenerとなる
+    const handler = channelInstance.addEventListener.mock.calls[1][1];
+
+    // 呼び出す
+    const event = new MessageEvent("message", {
+      data: { type: "task-updated" },
+    });
+
+    handler(event);
+
+    expect(listener).toHaveBeenCalled();
   });
 });

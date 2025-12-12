@@ -4,4 +4,5 @@ localStorage と sessionStorage それぞれに保存されたデータの有効
 
 ## 解答
 
-localStorageはブラウザを閉じてもデータが保持されるのに対し、sessionStorageはブラウザを閉じるとデータが削除される。
+localStorageはタブやブラウザを閉じてもデータが保持された。
+一方、sessionStorageはタブやブラウザを閉じるとデータが削除された。また、同じブラウザ内であっても別タブを開いてもデータは共有されなかった。
