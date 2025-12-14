@@ -104,12 +104,9 @@ class WorkerPool {
     });
   }
 }
-
-// 以下の定数で、マンデルブロ集合の計算の並行性を制御する。お使いのコンピュータで
-// 最適なパフォーマンスを得るには、これらを調整する必要があるかもしれない。
-const ROWS = 3,
-  COLS = 4,
-  NUMWORKERS = navigator.hardwareConcurrency || 2;
+const ROWS = 3;
+const COLS = 4;
+const NUMWORKERS = navigator.hardwareConcurrency || 2;
 
 class JuliaCanvas {
   constructor(canvas, cx = -0.7, cy = 0.27015) {
@@ -139,30 +136,35 @@ class JuliaCanvas {
   }
 
   render() {
+    // すでに描画処理が進行中の場合は、新しい描画リクエストを記録して処理をスキップ
     if (this.pendingRender) {
-      this.wantsRerender = true;
+      this.wantsRerender = true; // 描画が完了したら再描画するフラグをセット
       return;
     }
 
-    const perPixel = 3 / this.height; // 初期スケール
-    const maxIterations = 500;
+    // 描画に使用する初期スケール（1ピクセルあたりの複素平面の長さ）
+    const perPixel = 3 / this.height; // 高さを基準にスケールを決定
+    const maxIterations = 500; // 計算の反復回数の上限
     const x0 = -1.5,
-      y0 = -1.5;
+      y0 = -1.5; // 描画開始位置（複素平面上の左上座標）
 
+    // Tileごとにワーカープールで計算を依頼
     const promises = this.tiles.map((tile) =>
       this.workerPool.addWork({
-        tile,
-        x0: x0 + tile.x * perPixel,
-        y0: y0 + tile.y * perPixel,
-        perPixel,
-        maxIterations,
-        cx: this.cx,
-        cy: this.cy,
+        tile, // Tileオブジェクト（矩形領域）
+        x0: x0 + tile.x * perPixel, // Tile 左上の複素座標（実数部）
+        y0: y0 + tile.y * perPixel, // Tile 左上の複素座標（虚数部）
+        perPixel, // ピクセルあたりのスケール
+        maxIterations, // 反復回数の上限
+        cx: this.cx, // 描画中心の複素平面の x 座標
+        cy: this.cy, // 描画中心の複素平面の y 座標
       })
     );
 
+    // 全Tileの計算が完了するのを待つ
     this.pendingRender = Promise.all(promises)
       .then((responses) => {
+        // 全Tileの反復回数の最小値と最大値を計算
         let min = maxIterations,
           max = 0;
         for (const r of responses) {
@@ -170,12 +172,15 @@ class JuliaCanvas {
           if (r.max > max) max = r.max;
         }
 
+        // 色テーブルが未作成、またはサイズが合わない場合は再作成
         if (!this.colorTable || this.colorTable.length !== maxIterations + 1)
           this.colorTable = new Uint32Array(maxIterations + 1);
 
+        // すべてのピクセルが同じ反復回数の場合の処理
         if (min === max && min === maxIterations) {
-          this.colorTable[min] = 0xff000000;
+          this.colorTable[min] = 0xff000000; // 完全な黒
         } else {
+          // 反復回数を対数スケールで0〜255の不透明度に変換して色テーブルを作成
           const maxlog = Math.log(1 + max - min);
           for (let i = min; i <= max; i++) {
             this.colorTable[i] =
@@ -183,18 +188,25 @@ class JuliaCanvas {
           }
         }
 
+        // 各TileのImageDataの反復回数を色テーブルの値に置き換える
         for (const r of responses) {
           const iters = new Uint32Array(r.imageData.data.buffer);
           for (let i = 0; i < iters.length; i++)
             iters[i] = this.colorTable[iters[i]];
         }
 
+        // 描画用のCSS変換をリセット
         this.canvas.style.transform = "";
+
+        // 各TileのImageDataをCanvasに描画
         for (const r of responses)
           this.context.putImageData(r.imageData, r.tile.x, r.tile.y);
       })
       .finally(() => {
+        // 描画処理完了
         this.pendingRender = null;
+
+        // 描画中に新しい描画要求が来ていた場合、再度render()を呼ぶ
         if (this.wantsRerender) {
           this.wantsRerender = false;
           this.render();
