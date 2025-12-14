@@ -20,7 +20,7 @@ async function serveContentsHandler(url, _req, res) {
     const filePath = path.join(
       __dirname,
       "contents",
-      reqPath === "/" ? "index.html" : path.join(...reqPath.split("/")),
+      reqPath === "/" ? "index.html" : path.join(...reqPath.split("/"))
     );
 
     const content = await fs.readFile(filePath);
@@ -42,9 +42,30 @@ async function serveContentsHandler(url, _req, res) {
 }
 
 // CSP のヘッダを返すミドルウェア
-function cspMiddleware(_url, req, res) {
+async function cspMiddleware(_url, req, res) {
   // TODO: CSP ヘッダを設定する
-  // res.setHeader("Content-Security-Policy", "TODO");
+  const inline = 'alert("RICOH")';
+  const hashInlineScript = crypto
+    .createHash("sha256")
+    .update(inline, "utf8")
+    .digest("base64");
+
+  const helloJsPath = path.join(__dirname, "contents", "hello.js");
+
+  const helloJsContent = await fs.readFile(helloJsPath);
+  const hashHelloJs = crypto
+    .createHash("sha256")
+    .update(helloJsContent)
+    .digest("base64");
+
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      // FIXME: hashHelloJsのハッシュが上手く動かない
+      `script-src 'sha256-${hashInlineScript}' 'sha256-${hashHelloJs}'`,
+    ].join("; ")
+  );
   return true;
 }
 
@@ -115,7 +136,7 @@ async function main() {
     .createServer(async function (req, res) {
       await routes(["GET", "/*", serveContentsHandler, cspMiddleware])(
         req,
-        res,
+        res
       );
     })
     .listen(3000);
