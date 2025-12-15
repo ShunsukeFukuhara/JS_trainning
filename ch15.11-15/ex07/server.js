@@ -42,29 +42,21 @@ async function serveContentsHandler(url, _req, res) {
 }
 
 // CSP のヘッダを返すミドルウェア
-async function cspMiddleware(_url, req, res) {
+function cspMiddleware(_url, req, res) {
   // TODO: CSP ヘッダを設定する
+  // インラインスクリプトのハッシュ値を計算
   const inline = 'alert("RICOH")';
   const hashInlineScript = crypto
     .createHash("sha256")
     .update(inline, "utf8")
     .digest("base64");
 
-  const helloJsPath = path.join(__dirname, "contents", "hello.js");
-
-  const helloJsContent = await fs.readFile(helloJsPath);
-  const hashHelloJs = crypto
-    .createHash("sha256")
-    .update(helloJsContent)
-    .digest("base64");
+  // 配信されるスクリプトファイルのパス
+  const helloJsUrl = `http://${req.headers.host}/hello.js`;
 
   res.setHeader(
     "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      // FIXME: hashHelloJsのハッシュが上手く動かない
-      `script-src 'sha256-${hashInlineScript}' 'sha256-${hashHelloJs}'`,
-    ].join("; ")
+    `script-src 'sha256-${hashInlineScript}' '${helloJsUrl}'`
   );
   return true;
 }
