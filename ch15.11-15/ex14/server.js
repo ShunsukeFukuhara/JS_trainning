@@ -12,7 +12,7 @@ async function listTasksHandler(_url, _req, res) {
     Connection: "keep-alive",
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    "Access-Control-Allow-Origin": "http://localhost:3000",
+    "Access-Control-Allow-Origin": "http://127.0.0.1:5500",
   });
 
   setTimeout(() => {
@@ -40,7 +40,7 @@ async function serveContentsHandler(url, _req, res) {
     const filePath = path.join(
       __dirname,
       "contents",
-      reqPath === "/" ? "index.html" : path.join(...reqPath.split("/")),
+      reqPath === "/" ? "index.html" : path.join(...reqPath.split("/"))
     );
 
     const content = await fs.readFile(filePath);
@@ -76,7 +76,7 @@ function cookieAuthzMiddleware(_url, req, res, params) {
   // HttpOnly を有効にしてクライアントの JavaScript から Cookie を参照できないようにする
   res.setHeader(
     "Set-Cookie",
-    `sid=${encodeURIComponent(sid)}; Domain=localhost; Path=/; HttpOnly;`,
+    `sid=${encodeURIComponent(sid)}; Domain=localhost; Path=/; HttpOnly;`
   );
   return true;
 }
@@ -150,7 +150,7 @@ async function main() {
     .createServer(async function (req, res) {
       await routes(
         ["GET", "/message", listTasksHandler, authz],
-        ["GET", "/*", serveContentsHandler, authz],
+        ["GET", "/*", serveContentsHandler, authz]
       )(req, res);
     })
     .listen(3000);
