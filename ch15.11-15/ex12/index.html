@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OneDrive File Upload</title>
+    <script type="module" src="./index.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      label {
+        font-weight: bold;
+      }
+      #success {
+        color: green;
+      }
+      #failure {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OneDrive File Upload</h1>
+    <label for="accessToken">アクセストークン:</label>
+    <form id="uploadForm">
+      <input type="text" id="tokenInput" size="50" />
+      <br /><br />
+      <input type="file" id="fileInput" />
+      <br /><br />
+      <button id="uploadButton">アップロード</button>
+      <p id="success"></p>
+      <p id="failure"></p>
+    </form>
+  </body>
+</html>
