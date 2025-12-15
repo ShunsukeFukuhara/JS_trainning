@@ -1,6 +1,3 @@
-// 指定したファイルを OneDrive へアップロードするページを作成しなさい。
-// API を実行するためのアクセストークンは、Graph Explorer で取得したものをユーザが入力できるようにしなさい。
-
 const form = document.getElementById("uploadForm");
 const fileInput = document.getElementById("fileInput");
 const tokenInput = document.getElementById("tokenInput");
