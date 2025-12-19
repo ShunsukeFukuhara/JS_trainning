@@ -225,7 +225,7 @@ class JuliaCanvas {
 
   handleKey(e) {
     switch (e.key) {
-      case "+":
+      case "0":
         this.cx += 0.01;
         break;
       case "-":
