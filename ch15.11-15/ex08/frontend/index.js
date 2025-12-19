@@ -5,6 +5,7 @@ const inputs = document.querySelectorAll(".request-input");
 const waitingContainers = document.querySelectorAll(".waiting");
 const responseContainers = document.querySelectorAll(".response");
 const errorContainers = document.querySelectorAll(".error");
+const sendAllButton = document.getElementById("send-all-button");
 
 buttons.forEach((button, index) => {
   button.addEventListener("click", async () => {
@@ -23,4 +24,26 @@ buttons.forEach((button, index) => {
       button.disabled = false;
     }
   });
+});
+
+sendAllButton.addEventListener("click", async () => {
+  responseContainers.forEach((container) => (container.textContent = ""));
+  errorContainers.forEach((container) => (container.textContent = ""));
+  const promises = Array.from(inputs).map((input, index) => {
+    const body = new RequestBody(input.value);
+    waitingContainers[index].textContent = "Waiting for response...";
+    buttons[index].disabled = true;
+    return sendRequest(body)
+      .then((response) => {
+        responseContainers[index].textContent = `Response: ${response.message}`;
+      })
+      .catch((error) => {
+        errorContainers[index].textContent = `Error: ${error.message}`;
+      })
+      .finally(() => {
+        waitingContainers[index].textContent = "";
+        buttons[index].disabled = false;
+      });
+  });
+  await Promise.all(promises);
 });
