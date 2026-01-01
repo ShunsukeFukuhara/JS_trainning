@@ -1,9 +1,5 @@
 import crypto from "crypto";
 
-// 以下は、暗号化とBase64エンコード、Base64デコードと復号のサンプルコードです。
-// 穴埋めして完成させなさい。なお、穴埋め箇所ではcrypto.CipherとBuffer.fromを使用しなさい。
-// なお、暗号化のアルゴリズムはaes-256-cbcを指定しなさい。
-
 // ここを埋める
 import fs from "fs/promises";
 
