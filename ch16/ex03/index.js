@@ -7,6 +7,9 @@ import crypto from "crypto";
 // ここを埋める
 import fs from "fs/promises";
 
+const encryptedFilePath = "ex03/encrypted.json";
+const keyFilePath = "ex03/key.json";
+
 // 鍵を生成する
 function generateKey() {
   // 32バイトの暗号論的疑似乱数を生成する
@@ -38,7 +41,7 @@ function encrypt64(text, key) {
 async function writeKey(key) {
   // ここを埋める（fs.promisesで鍵を保存）
   await fs.writeFile(
-    "ex03/key.json",
+    keyFilePath,
     JSON.stringify({ key: key.toString("base64") })
   );
 }
@@ -46,12 +49,12 @@ async function writeKey(key) {
 // encrypt64の返り値を、JSON形式でファイルに保存する(非同期)
 async function writeEncrypt64(data) {
   // ここを埋める（fs.promisesで暗号データを保存）
-  await fs.writeFile("ex03/encrypted.json", JSON.stringify(data));
+  await fs.writeFile(encryptedFilePath, JSON.stringify(data));
 }
 
 async function readKey() {
   // ここを埋める（return Promise<鍵>）
-  const content = await fs.readFile("ex03/key.json", "utf8");
+  const content = await fs.readFile(keyFilePath, "utf8");
   const parsed = JSON.parse(content);
   return Buffer.from(parsed.key, "base64");
 }
@@ -59,7 +62,7 @@ async function readKey() {
 // ファイルから暗号データを読み込む (非同期)
 async function readEncrypt64() {
   // ここを埋める（return Promise<data>）
-  const content = await fs.readFile("ex03/encrypted.json", "utf8");
+  const content = await fs.readFile(encryptedFilePath, "utf8");
   const parsed = JSON.parse(content);
   return {
     value: parsed.value,
