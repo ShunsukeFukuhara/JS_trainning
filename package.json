@@ -27,6 +27,7 @@
   "type": "module",
   "dependencies": {
     "acorn": "^8.14.1",
+    "canvas": "^3.2.0",
     "express": "^5.2.1",
     "fs": "^0.0.1-security",
     "iconv-lite": "^0.7.1",
