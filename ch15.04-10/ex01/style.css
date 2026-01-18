@@ -1,0 +1,152 @@
+.completed {
+  text-decoration: line-through;
+}
+
+/* 🎄 クリスマス風 ToDo アプリ CSS 🎅 */
+
+/* フォントを設定するとともに、背景を雪景色風に変更。また全体の要素配置を調整 */
+body {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  background: linear-gradient(to bottom, #fdfbfb 0%, #ebedee 100%);
+  background-image: url("https://www.transparenttextures.com/patterns/snow.png");
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* 多分効いていない */
+h1 {
+  color: #d32f2f;
+  text-shadow: 0 0 10px #fff;
+}
+
+/* フォームの背景を全体の背景から浮かせ、枠線の色を設定。また適切な余白を設定 */
+form {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #388e3c;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  box-shadow: 0 0 10px rgba(56, 142, 60, 0.3);
+}
+
+/* 入力フィールドの枠を調整 */
+input[type="text"] {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 2px solid #c62828;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+/* 追加ボタンの背景色(グラデーション付き)やフォントを設定。また、マウスポインタを指に変えている */
+button {
+  background: linear-gradient(145deg, #d32f2f, #c2185b);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 追加ボタンにホバーエフェクトを追加 */
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* ToDo リスト全体のスタイル。幅と上の余白のみを設定 */
+#todo-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* 各 ToDo アイテムのスタイル。背景色、枠線、余白、パディング、影などを設定。 */
+/* なお子要素の配置に関するプロパティは.viewで設定しているのでここでは効いていないように見える */
+li {
+  background: #fff8e1;
+  border: 2px solid #388e3c;
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  transition:
+    background 0.3s,
+    transform 0.2s;
+}
+
+/* ToDo アイテムに少し浮くようなホバーエフェクトを追加 */
+li:hover {
+  background: #fff3e0;
+  transform: translateY(-2px);
+}
+
+/* 各 ToDo アイテム内の要素配置を調整 */
+.view {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* チェックボックスのスタイルを調整 */
+.toggle {
+  accent-color: #388e3c;
+  transform: scale(1.3);
+  cursor: pointer;
+}
+
+/* ToDo 内容のスタイル。フォントサイズ、色、折り返し設定などを調整 */
+.content {
+  flex: 1;
+  font-size: 1rem;
+  color: #2e7d32;
+  word-break: break-all;
+}
+
+/* 完了した ToDo の内容に取り消し線と色変更を適用 */
+.completed .content {
+  text-decoration: line-through;
+  color: #9e9e9e;
+}
+
+/* 削除ボタンのスタイル。透明ガラスのようなスタイル */
+.destroy {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+/* 削除ボタンに少し回転するようなホバーエフェクトを追加 */
+.destroy:hover {
+  transform: rotate(20deg) scale(1.2);
+}
+
+/* 画面上部にMerry Christmasの文字を表示 */
+body::before {
+  content: "🎄 Merry Christmas 🎅";
+  position: fixed;
+  top: 1rem;
+  font-size: 1.2rem;
+  color: #c62828;
+  font-weight: bold;
+  text-shadow: 0 0 8px white;
+}

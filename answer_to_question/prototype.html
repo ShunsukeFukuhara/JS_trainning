@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Prototypeチェーン確認</title>
+  </head>
+  <body>
+    <h1>開発者ツールを開いてConsoleを見てください</h1>
+
+    <script>
+      function Animal(name) {
+        this.name = name;
+      }
+
+      Animal.prototype.sayHello = function () {
+        console.log(`こんにちは、私は ${this.name} です`);
+      };
+
+      const dog = new Animal("ポチ");
+
+      console.log("dogオブジェクト:", dog);
+      console.log("dog.__proto__:", dog.__proto__);
+      console.log(
+        "dog.__proto__ === Animal.prototype:",
+        dog.__proto__ === Animal.prototype
+      );
+      console.log("dogのプロトタイプチェーン:");
+      console.log(dog);
+      console.dir(dog); // オブジェクトの構造をより詳細に表示
+
+      // Object.getPrototypeOfを使う方法（推奨）
+      console.log("Object.getPrototypeOf(dog):", Object.getPrototypeOf(dog));
+    </script>
+  </body>
+</html>

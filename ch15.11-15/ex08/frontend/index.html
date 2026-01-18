@@ -1,0 +1,59 @@
+<!-- リクエストの送信とレスポンスの確認が可能な Web ページを作成しなさい
+
+リクエスト本文の入力欄を複数用意し、ボタン押下時に sendRequest 関数でを同時にリクエストを送信するできるようにすること。
+時間内にレスポンスが返った場合はレスポンス本文を、エラーまたはタイムアウトが発生した場合はその内容を、対応するリクエスト入力欄の横または下に表示すること。-->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Request/Response</title>
+    <script type="module" src="./index.js" defer></script>
+    <style>
+      .request-container {
+        margin-bottom: 1em;
+      }
+      .waiting {
+        margin-top: 0.5em;
+        color: gray;
+      }
+      .response {
+        margin-top: 0.5em;
+        color: blue;
+      }
+      .error {
+        margin-top: 0.5em;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebSocketテスト</h1>
+
+    <div class="request-container">
+      <input type="text" class="request-input" placeholder="Enter" />
+      <button class="send-button">Send</button>
+      <div class="waiting"></div>
+      <div class="response"></div>
+      <div class="error"></div>
+    </div>
+
+    <div class="request-container">
+      <input type="text" class="request-input" placeholder="Enter2" />
+      <button class="send-button">Send</button>
+      <div class="waiting"></div>
+      <div class="response"></div>
+      <div class="error"></div>
+    </div>
+
+    <div class="request-container">
+      <input type="text" class="request-input" placeholder="Enter3" />
+      <button class="send-button">Send</button>
+      <div class="waiting"></div>
+      <div class="response"></div>
+      <div class="error"></div>
+    </div>
+
+    <button id="send-all-button">Send All Requests</button>
+  </body>
+</html>

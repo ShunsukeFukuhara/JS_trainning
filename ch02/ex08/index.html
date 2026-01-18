@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>AST ツリー ビューア</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      .node circle {
+        fill: #fff;
+        stroke: steelblue;
+        stroke-width: 2px;
+      }
+      .node text {
+        font: 12px sans-serif;
+      }
+      .link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 2px;
+      }
+      .link-label {
+        font: 10px sans-serif;
+        fill: gray;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="1000" height="1000"></svg>
+
+    <script>
+      function toTreeNode(node, parentKey = "") {
+        // Program直下のbodyの場合
+        if (!parentKey) {
+          parentKey = "body"; // Programノード直下のリンクは"body"を設定
+        }
+
+        if (node == null || typeof node !== "object") {
+          return { name: String(node), parentKey };
+        }
+
+        const children = [];
+        for (const key in node) {
+          const val = node[key];
+          if (Array.isArray(val)) {
+            // 配列の要素にインデックスを使わず、親のキー名を使う
+            val.forEach((v) => {
+              if (typeof v === "object" && v !== null) {
+                // 配列内の要素に親キーを渡して再帰的に処理
+                children.push(toTreeNode(v, key)); // key（親のキー名）を使用
+              }
+            });
+          } else if (val && typeof val === "object" && val.type) {
+            // 配列ではないオブジェクトの処理
+            children.push(toTreeNode(val, key)); // key（親のキー名）を使用
+          }
+        }
+
+        return {
+          name: node.type || "Node",
+          parentKey, // 親のキー名を保持
+          children: children.length > 0 ? children : undefined,
+        };
+      }
+
+      // メイン描画処理
+      fetch("ast.json")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+          const rootData = {
+            name: "Program", // Programノード
+            children: data.body.map((node) => toTreeNode(node, "body")),
+          };
+          const width = 1000;
+          const height = 1000;
+
+          const svg = d3
+            .select("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          const root = d3.hierarchy(rootData);
+          const treeLayout = d3.tree().size([width - 200, height - 200]);
+          treeLayout(root);
+
+          // リンク描画
+          svg
+            .selectAll("path.link")
+            .data(root.links())
+            .enter()
+            .append("path")
+            .attr("class", "link")
+            .attr(
+              "d",
+              d3
+                .linkVertical()
+                .x((d) => d.x + 100)
+                .y((d) => d.y + 50)
+            );
+
+          // リンクラベル
+          svg
+            .selectAll("text.link-label")
+            .data(root.links())
+            .enter()
+            .append("text")
+            .attr("class", "link-label")
+            .attr("x", (d) => (d.source.x + d.target.x) / 2 + 100)
+            .attr("y", (d) => (d.source.y + d.target.y) / 2 + 45)
+            .attr("text-anchor", "middle")
+            .text((d) => d.target.data.parentKey);
+
+          // ノード
+          const node = svg
+            .selectAll("g.node")
+            .data(root.descendants())
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", (d) => `translate(${d.x + 100},${d.y + 50})`);
+
+          node.append("circle").attr("r", 8);
+          node
+            .append("text")
+            .attr("dy", 3)
+            .attr("x", (d) => (d.children ? -12 : 12))
+            .style("text-anchor", (d) => (d.children ? "end" : "start"))
+            .text((d) => d.data.name);
+        });
+    </script>
+  </body>
+</html>
