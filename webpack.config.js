@@ -6,6 +6,7 @@ const __dirname = path.dirname(__filename);
 
 export default {
   mode: 'development',
+  devtool: 'source-map',
   entry: './ch17/ex05/index.js',
   output: {
     filename: 'bundle.js',
