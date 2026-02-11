@@ -8,23 +8,30 @@ type Priority = 'low' | 'middle' | 'high';
 
 export type PriorityTask = Task & { priority: Priority };
 
-function isUserObject(obj: mixed): boolean %checks {
+function isUserObject(obj: mixed): boolean {
   return (
+    obj !== null &&
     typeof obj === 'object' &&
     typeof obj['id'] === 'number' &&
     typeof obj['name'] === 'string'
   );
 }
 
-export class TaskManager {
-  _tasks = [];
+type Predicate<T> = (arg: T) => boolean;
+
+export class TaskManager<T: Task> {
+  _tasks: T[];
+
+  constructor() {
+    this._tasks = [];
+  }
 
   // タスクを追加する
-  add(task) {
+  add(task: T) {
     this._tasks.push(task);
   }
 
-  completeTask(target) {
+  completeTask(target: string | User) {
     if (isUserObject(target)) {
       this._tasks
         .filter((t) => t.user === target)
@@ -36,8 +43,8 @@ export class TaskManager {
     }
   }
 
-  getTasks(predicate) {
-    if (predicate === undefined) {
+  getTasks(predicate: ?Predicate<T>): T[] {
+    if (!predicate) {
       return this._tasks;
     } else {
       return this._tasks.filter(predicate);
@@ -45,10 +52,10 @@ export class TaskManager {
   }
 }
 
-export function isLowOrCompletedTask(priorityTask) {
+export function isLowOrCompletedTask(priorityTask: PriorityTask): boolean {
   return priorityTask.priority === 'low' || priorityTask.completed;
 }
 
-export function not(f) {
+export function not<T>(f: Predicate<T>): Predicate<T> {
   return (arg) => !f(arg);
 }
