@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -22,11 +24,16 @@ function createTextElement(text) {
 
 function createDom(fiber) {
   const dom =
-    fiber.type == 'TEXT_ELEMENT'
+    element.type == 'TEXT_ELEMENT'
       ? document.createTextNode('')
-      : document.createElement(fiber.type);
+      : document.createElement(element.type);
 
-  updateDom(dom, {}, fiber.props);
+  const isProperty = (key) => key !== 'children';
+  Object.keys(element.props)
+    .filter(isProperty)
+    .forEach((name) => {
+      dom[name] = element.props[name];
+    });
 
   return dom;
 }
@@ -36,7 +43,7 @@ const isProperty = (key) => key !== 'children' && !isEvent(key);
 const isNew = (prev, next) => (key) => prev[key] !== next[key];
 const isGone = (prev, next) => (key) => !(key in next);
 function updateDom(dom, prevProps, nextProps) {
-  //Remove old or changed event listeners
+  // Remove old or changed event listeners
   Object.keys(prevProps)
     .filter(isEvent)
     .filter((key) => !(key in nextProps) || isNew(prevProps, nextProps)(key))
@@ -49,17 +56,13 @@ function updateDom(dom, prevProps, nextProps) {
   Object.keys(prevProps)
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
-    .forEach((name) => {
-      dom[name] = '';
-    });
+    .forEach((name) => (dom['name'] = ''));
 
   // Set new or changed properties
   Object.keys(nextProps)
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
-    .forEach((name) => {
-      dom[name] = nextProps[name];
-    });
+    .forEach((name) => (dom[name] = nextProps[name]));
 
   // Add event listeners
   Object.keys(nextProps)
@@ -83,11 +86,11 @@ function commitWork(fiber) {
     return;
   }
 
-  let domParentFiber = fiber.parent;
+  const domParentFiber = fiber.parent;
   while (!domParentFiber.dom) {
     domParentFiber = domParentFiber.parent;
   }
-  const domParent = domParentFiber.dom;
+  const domParent = domParentFiber.parent;
 
   if (fiber.effectTag === 'PLACEMENT' && fiber.dom != null) {
     domParent.appendChild(fiber.dom);
@@ -143,12 +146,15 @@ function workLoop(deadline) {
 requestIdleCallback(workLoop);
 
 function performUnitOfWork(fiber) {
+  // add dom node
   const isFunctionComponent = fiber.type instanceof Function;
   if (isFunctionComponent) {
     updateFunctionComponent(fiber);
   } else {
     updateHostComponent(fiber);
   }
+
+  // return next unit of work
   if (fiber.child) {
     return fiber.child;
   }
@@ -168,7 +174,7 @@ function updateFunctionComponent(fiber) {
   wipFiber = fiber;
   hookIndex = 0;
   wipFiber.hooks = [];
-  const children = [fiber.type(fiber.props)];
+  const children = fiber.type(fiber.props);
   reconcileChildren(fiber, children);
 }
 
@@ -204,7 +210,7 @@ function useState(initial) {
 }
 
 function updateHostComponent(fiber) {
-  if (!fiber.dom) {
+  if (fiber.dom) {
     fiber.dom = createDom(fiber);
   }
   reconcileChildren(fiber, fiber.props.children);
@@ -222,6 +228,7 @@ function reconcileChildren(wipFiber, elements) {
     const sameType = oldFiber && element && element.type == oldFiber.type;
 
     if (sameType) {
+      // update the node
       newFiber = {
         type: oldFiber.type,
         props: element.props,
@@ -231,7 +238,9 @@ function reconcileChildren(wipFiber, elements) {
         effectTag: 'UPDATE',
       };
     }
+
     if (element && !sameType) {
+      // add this node
       newFiber = {
         type: element.type,
         props: element.props,
@@ -241,7 +250,9 @@ function reconcileChildren(wipFiber, elements) {
         effectTag: 'PLACEMENT',
       };
     }
+
     if (oldFiber && !sameType) {
+      // delete the oldFiber's node
       oldFiber.effectTag = 'DELETION';
       deletions.push(oldFiber);
     }
@@ -251,8 +262,8 @@ function reconcileChildren(wipFiber, elements) {
     }
 
     if (index === 0) {
-      wipFiber.child = newFiber;
-    } else if (element) {
+      fiber.child = newFiber;
+    } else {
       prevSibling.sibling = newFiber;
     }
 
@@ -263,7 +274,6 @@ function reconcileChildren(wipFiber, elements) {
 
 const Didact = {
   createElement,
-  render,
   useState,
 };
 
@@ -274,4 +284,5 @@ function Counter() {
 }
 const element = <Counter />;
 const container = document.getElementById('root');
+
 Didact.render(element, container);
