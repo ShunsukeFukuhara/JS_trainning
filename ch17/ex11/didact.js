@@ -76,6 +76,7 @@ function commitRoot() {
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
+  executeEffects();
 }
 
 function commitWork(fiber) {
@@ -102,6 +103,7 @@ function commitWork(fiber) {
 }
 
 function commitDeletion(fiber, domParent) {
+  runCleanup(fiber); // アンマウント時のクリーンアップを実行する
   if (fiber.dom) {
     domParent.removeChild(fiber.dom);
   } else {
@@ -125,6 +127,7 @@ let nextUnitOfWork = null;
 let currentRoot = null;
 let wipRoot = null;
 let deletions = null;
+let effects = [];
 
 function workLoop(deadline) {
   let shouldYield = false;
@@ -172,23 +175,52 @@ function updateFunctionComponent(fiber) {
   reconcileChildren(fiber, children);
 }
 
-function useState(initial) {
+function hookAction(hookFactory) {
   const oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
     wipFiber.alternate.hooks[hookIndex];
-  const hook = {
-    state: oldHook ? oldHook.state : initial,
-    queue: [],
-  };
 
-  const actions = oldHook ? oldHook.queue : [];
-  actions.forEach((action) => {
-    hook.state = action(hook.state);
+  const hook = hookFactory(oldHook);
+
+  wipFiber.hooks.push(hook);
+  hookIndex++;
+  return hook;
+}
+
+function useState(initial) {
+  const hook = hookAction((oldHook) => {
+    // useStateのhookは状態(state: any)と更新関数の待ち列(que: Array<function>)を持つ
+    const hook = oldHook
+      ? {
+          state: oldHook.state,
+          queue: [...oldHook.queue], // ディープコピーしておく
+        }
+      : {
+          state: initial,
+          queue: [],
+        };
+
+    // 古いhookの更新関数をすべて実行して、最新の状態を計算する
+    const actions = hook.queue;
+    hook.queue = [];
+
+    actions.forEach((action) => {
+      hook.state = action(hook.state);
+    });
+
+    return hook;
   });
 
-  const setState = (action) => {
+  const setState = (actionOrValue) => {
+    // actionOrValueが関数ならそのまま、そうでないなら値を返す関数に変換する
+    const action =
+      typeof actionOrValue === 'function' ? actionOrValue : () => actionOrValue;
+
+    // すぐに状態を更新するのではなく、更新関数を待ち列に追加する
     hook.queue.push(action);
+
+    // UIの更新をスケジュールする
     wipRoot = {
       dom: currentRoot.dom,
       props: currentRoot.props,
@@ -198,9 +230,77 @@ function useState(initial) {
     deletions = [];
   };
 
-  wipFiber.hooks.push(hook);
-  hookIndex++;
   return [hook.state, setState];
+}
+
+function depsChanged(oldHook, deps) {
+  if (!oldHook) return true; // 初回
+  if (deps === undefined) return true; // 依存関係が指定されていない場合は常に再計算する
+  if (oldHook.deps === undefined || oldHook.deps.length !== deps.length)
+    return true; // 普通に使っていれば起きない条件
+
+  // 依存関係のいずれかが変更された場合はtrueを返す
+  // Object.isを使うと、NaNや-0/+0も正しく比較できる
+  return deps.some((dep, i) => !Object.is(dep, oldHook.deps[i]));
+}
+
+function useMemo(factory, deps) {
+  const hook = hookAction((oldHook) => {
+    // useMemoのhookは値(value)と依存関係(deps)を持つ
+    return {
+      value: depsChanged(oldHook, deps) ? factory() : oldHook.value, // 依存関係が変更された場合は新しい値を計算する
+      deps: deps,
+    };
+  });
+
+  return hook.value;
+}
+
+function useCallback(callback, deps) {
+  return useMemo(() => callback, deps);
+}
+
+function useEffect(effect, deps) {
+  // useEffectはhookの返り値が不要
+  hookAction((oldHook) => {
+    // useEffectのhookは依存関係(deps)とクリーンアップ関数(cleanup)を持つ
+    const hook = {
+      deps,
+      cleanup: oldHook ? oldHook.cleanup : undefined,
+    };
+
+    // 依存関係が変更された場合は、クリーンアップ関数をeffectsに追加して、次のレンダリング後に実行する
+    if (depsChanged(oldHook, deps)) {
+      effects.push({
+        hook,
+        effect,
+      });
+    }
+
+    return hook;
+  });
+}
+
+// useEffectを実行する
+function executeEffects() {
+  effects.forEach(({ hook, effect }) => {
+    hook.cleanup?.(); // クリーンアップ関数があれば実行する
+    hook.cleanup = effect(); // effect関数を実行して、クリーンアップ関数を保存する
+  });
+
+  effects = [];
+}
+
+// アンマウント時にクリーンアップ関数を実行する
+function cleanupEffects() {
+  if (fiber.hooks) {
+    fiber.hooks.forEach((hook) => {
+      hook.cleanup?.();
+    });
+  }
+
+  if (fiber.child) runCleanup(fiber.child);
+  if (fiber.sibling) runCleanup(fiber.sibling);
 }
 
 function updateHostComponent(fiber) {
@@ -265,13 +365,52 @@ const Didact = {
   createElement,
   render,
   useState,
+  useMemo,
+  useCallback,
+  useEffect,
 };
 
 /** @jsx Didact.createElement */
 function Counter() {
-  const [state, setState] = Didact.useState(1);
-  return <h1 onClick={() => setState((c) => c + 1)}>Count: {state}</h1>;
+  const [count, setCount] = Didact.useState(1);
+  const [label, setLabel] = Didact.useState('Hello!');
+  const [flag, setFlag] = Didact.useState(false);
+
+  const memoResult = useMemo(() => {
+    console.log('useMemo計算実行');
+    return count * 2;
+  }, [count]);
+
+  const callback = useCallback(() => {
+    console.log('useCallback実行');
+  }, [flag]);
+
+  useEffect(() => {
+    console.log('useEffect実行: ' + label);
+    return () => {
+      console.log('useEffectクリーンアップ');
+    };
+  }, [label]);
+
+  return (
+    <ul>
+      <li>
+        <h1 onClick={() => setCount((c) => c + 1)}>Count: {count}</h1>
+        <p>Memoized Count * 2: {memoResult}</p>
+      </li>
+      <li>
+        <input onChange={(e) => setLabel(e.target.value)} />
+        <p>{label}</p>
+      </li>
+      <li>
+        <button onClick={() => setFlag((f) => !f)}>
+          {flag ? 'ON' : 'OFF'}
+        </button>
+      </li>
+    </ul>
+  );
 }
+
 const element = <Counter />;
 const container = document.getElementById('root');
 Didact.render(element, container);
