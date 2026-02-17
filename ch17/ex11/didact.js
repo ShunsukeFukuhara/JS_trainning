@@ -259,10 +259,14 @@ function depsChanged(oldHook, deps) {
 
 function useMemo(factory, deps) {
   const hook = hookAction((oldHook) => {
+    if (!depsChanged(oldHook, deps)) {
+      return oldHook;
+    }
+
     // useMemoのhookは値(value)と依存関係(deps)を持つ
     return {
-      value: depsChanged(oldHook, deps) ? factory() : oldHook.value, // 依存関係が変更された場合は新しい値を計算する
-      deps: deps,
+      value: factory(),
+      deps,
     };
   });
 
@@ -394,7 +398,7 @@ function Counter() {
   }, [count]);
 
   const callback = useCallback(() => {
-    console.log('useCallback実行');
+    alert('フラグは' + (flag ? 'ON' : 'OFF') + 'です');
   }, [flag]);
 
   useEffect(() => {
@@ -418,7 +422,9 @@ function Counter() {
         <button onClick={() => setFlag((f) => !f)}>
           {flag ? 'OFFにする' : 'ONにする'}
         </button>
-        {flag && <p>🔥Flag is ON🔥</p>}
+      </li>
+      <li>
+        <button onClick={callback}>フラグの状態をアラート</button>
       </li>
     </ul>
   );
