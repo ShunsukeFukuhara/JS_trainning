@@ -315,12 +315,6 @@ function cleanupEffects(fiber) {
   if (fiber.child) cleanupEffects(fiber.child);
 }
 
-function useRef(initial)=> hookAction((oldHook) => {
-    if (oldHook) return oldHook;
-    return { current: initial };
-  });
-
-
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
