@@ -3,9 +3,15 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children: children.map((child) =>
-        typeof child === 'object' ? child : createTextElement(child),
-      ),
+      children: children
+        .flat()
+        .filter(
+          // falseも除外することで、flag && <p>...</p>のような条件付きレンダリングをサポートする
+          (child) => child !== false && child !== null && child !== undefined,
+        )
+        .map((child) =>
+          typeof child === 'object' ? child : createTextElement(child),
+        ),
     },
   };
 }
@@ -96,6 +102,8 @@ function commitWork(fiber) {
     updateDom(fiber.dom, fiber.alternate.props, fiber.props);
   } else if (fiber.effectTag === 'DELETION') {
     commitDeletion(fiber, domParent);
+    // 削除後はcommitしないようにすることで、commitWorkの再帰呼び出しで削除された要素にアクセスするのを防ぐ
+    return;
   }
 
   commitWork(fiber.child);
@@ -103,11 +111,16 @@ function commitWork(fiber) {
 }
 
 function commitDeletion(fiber, domParent) {
-  runCleanup(fiber); // アンマウント時のクリーンアップを実行する
+  cleanupEffects(fiber); // アンマウント時のクリーンアップを実行する
   if (fiber.dom) {
     domParent.removeChild(fiber.dom);
   } else {
-    commitDeletion(fiber.child, domParent);
+    // fiber.domがない場合は、子要素を再帰的に探して削除する
+    let child = fiber.child;
+    while (child) {
+      commitDeletion(child, domParent);
+      child = child.sibling;
+    }
   }
 }
 
@@ -292,16 +305,21 @@ function executeEffects() {
 }
 
 // アンマウント時にクリーンアップ関数を実行する
-function cleanupEffects() {
+function cleanupEffects(fiber) {
   if (fiber.hooks) {
     fiber.hooks.forEach((hook) => {
       hook.cleanup?.();
     });
   }
 
-  if (fiber.child) runCleanup(fiber.child);
-  if (fiber.sibling) runCleanup(fiber.sibling);
+  if (fiber.child) cleanupEffects(fiber.child);
 }
+
+function useRef(initial)=> hookAction((oldHook) => {
+    if (oldHook) return oldHook;
+    return { current: initial };
+  });
+
 
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
@@ -404,13 +422,27 @@ function Counter() {
       </li>
       <li>
         <button onClick={() => setFlag((f) => !f)}>
-          {flag ? 'ON' : 'OFF'}
+          {flag ? 'OFFにする' : 'ONにする'}
         </button>
+        {flag && <p>🔥Flag is ON🔥</p>}
       </li>
     </ul>
   );
 }
 
-const element = <Counter />;
+/** @jsx Didact.createElement */
+function App() {
+  const [showCounter, setShowCounter] = Didact.useState(true);
+  return (
+    <div>
+      <button onClick={() => setShowCounter((s) => !s)}>
+        {showCounter ? 'Hide' : 'Show'} Counter
+      </button>
+      {showCounter && <Counter />}
+    </div>
+  );
+}
+
+const element = <App />;
 const container = document.getElementById('root');
 Didact.render(element, container);
