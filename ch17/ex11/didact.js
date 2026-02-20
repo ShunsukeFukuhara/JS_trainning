@@ -408,6 +408,8 @@ function Counter() {
     };
   }, [label]);
 
+  console.log('Counterレンダリング');
+
   return (
     <ul>
       <li>
